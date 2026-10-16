@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/IntentMatcher.Api/IntentMatcher.Api.csproj" />
+    <Project Path="src/IntentMatcher.Application/IntentMatcher.Application.csproj" />
+    <Project Path="src/IntentMatcher.Cli/IntentMatcher.Cli.csproj" />
+    <Project Path="src/IntentMatcher.Domain/IntentMatcher.Domain.csproj" />
+    <Project Path="src/IntentMatcher.Infrastructure/IntentMatcher.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/IntentMatcher.IntegrationTests/IntentMatcher.IntegrationTests.csproj" />
+    <Project Path="tests/IntentMatcher.UnitTests/IntentMatcher.UnitTests.csproj" />
+  </Folder>
+</Solution>
