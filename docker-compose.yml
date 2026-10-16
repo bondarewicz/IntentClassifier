@@ -1,0 +1,22 @@
+# Own compose project, container, volume and port, independent of any other local Postgres.
+name: banking77
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: banking77-pg
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: banking77
+    ports:
+      - "5435:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d banking77"]
+      interval: 2s
+      retries: 30
+
+volumes:
+  pgdata:
