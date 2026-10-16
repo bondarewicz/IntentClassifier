@@ -98,3 +98,11 @@ plain `OPENAI_API_KEY` is a fallback for the key. Never commit a key.
 ```sh
 dotnet test IntentMatcher.slnx     # integration tests need Docker running
 ```
+
+## Formatting
+
+```sh
+dotnet tool restore          # installs CSharpier (.config/dotnet-tools.json)
+dotnet csharpier format .    # formats the solution
+dotnet csharpier check .     # verifies formatting without changing files
+```

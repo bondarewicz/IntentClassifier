@@ -1,27 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <ItemGroup>
     <ProjectReference Include="..\IntentMatcher.Application\IntentMatcher.Application.csproj" />
     <ProjectReference Include="..\IntentMatcher.Domain\IntentMatcher.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Dapper" Version="2.1.89" />
-    <PackageReference Include="FluentMigrator.Runner" Version="8.0.1" />
-    <PackageReference Include="FluentMigrator.Runner.Postgres" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.13" />
-    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.13" />
-    <PackageReference Include="Npgsql" Version="10.0.3" />
-    <PackageReference Include="OpenAI" Version="2.14.0" />
-    <PackageReference Include="Pgvector" Version="0.3.2" />
-    <PackageReference Include="Pgvector.Dapper" Version="0.3.1" />
-    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+    <PackageReference Include="Dapper" />
+    <PackageReference Include="FluentMigrator.Runner" />
+    <PackageReference Include="FluentMigrator.Runner.Postgres" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="OpenAI" />
+    <PackageReference Include="Pgvector" />
+    <PackageReference Include="Pgvector.Dapper" />
+    <!-- Pins the transitive dependency above the version with GHSA-846f-f764-76mx / GHSA-2fmv-rv2c-59x7; no direct code usage. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
   </ItemGroup>
-
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-
 </Project>
