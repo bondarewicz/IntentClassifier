@@ -10,8 +10,7 @@ using Testcontainers.PostgreSql;
 // One throwaway pgvector Postgres per test class, migrated and seeded with a tiny Banking77-shaped dataset.
 public sealed class PostgresFixture : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder()
-        .WithImage("pgvector/pgvector:pg17")
+    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("pgvector/pgvector:pg17")
         .WithDatabase("banking77_test")
         .Build();
 
