@@ -5,7 +5,8 @@ using IntentMatcher.Domain.Intents;
 using IntentMatcher.Domain.Queries;
 using Npgsql;
 
-internal sealed class LabelledQueryRepository(NpgsqlDataSource dataSource) : ILabelledQueryRepository
+internal sealed class LabelledQueryRepository(NpgsqlDataSource dataSource)
+    : ILabelledQueryRepository
 {
     public async Task<LabelledQuery?> FindByText(QueryText text, CancellationToken ct = default)
     {
@@ -18,16 +19,23 @@ internal sealed class LabelledQueryRepository(NpgsqlDataSource dataSource) : ILa
         return row?.MapToLabelledQuery();
     }
 
-    public async Task<IReadOnlyList<LabelledQuery>> ListWithoutEmbedding(CancellationToken ct = default)
+    public async Task<IReadOnlyList<LabelledQuery>> ListWithoutEmbedding(
+        CancellationToken ct = default
+    )
     {
         var sql = LabelledQueriesSchema.Sql.SelectWithoutEmbedding;
 
         await using var conn = await dataSource.OpenConnectionAsync(ct);
-        var rows = await conn.QueryAsync<LabelledQueryRow>(new CommandDefinition(sql, cancellationToken: ct));
+        var rows = await conn.QueryAsync<LabelledQueryRow>(
+            new CommandDefinition(sql, cancellationToken: ct)
+        );
         return rows.Select(r => r.MapToLabelledQuery()).ToList();
     }
 
-    public async Task SaveEmbeddings(IReadOnlyCollection<LabelledQuery> queries, CancellationToken ct = default)
+    public async Task SaveEmbeddings(
+        IReadOnlyCollection<LabelledQuery> queries,
+        CancellationToken ct = default
+    )
     {
         var sql = LabelledQueriesSchema.Sql.UpdateEmbeddings;
         var embedded = queries.Where(q => q.HasEmbedding).ToList();
@@ -41,7 +49,7 @@ internal sealed class LabelledQueryRepository(NpgsqlDataSource dataSource) : ILa
                 new
                 {
                     QueryIds = embedded.Select(q => q.Id).ToArray(),
-                    Embeddings = embedded.Select(q => q.Embedding!.ToVectorLiteral()).ToArray()
+                    Embeddings = embedded.Select(q => q.Embedding!.ToVectorLiteral()).ToArray(),
                 },
                 cancellationToken: ct
             )

@@ -14,7 +14,8 @@ using Microsoft.Extensions.DependencyInjection;
 // Ordered as one scenario because each step builds on the previous one.
 public sealed class PipelineTests(PostgresFixture db) : IClassFixture<PostgresFixture>
 {
-    private T Get<T>() where T : notnull => db.Services.GetRequiredService<T>();
+    private T Get<T>()
+        where T : notnull => db.Services.GetRequiredService<T>();
 
     [Fact]
     public async Task Full_pipeline_from_empty_database_to_classification()
@@ -25,12 +26,18 @@ public sealed class PipelineTests(PostgresFixture db) : IClassFixture<PostgresFi
         // seed: labels canonicalized, duplicate train text collapsed, the train/test overlap kept in both
         var seeded = await Get<IDatasetImporter>().ImportBanking77(db.TrainCsv, db.TestCsv);
         Assert.Equal(new DatasetImportResult(Intents: 4, TrainQueries: 10, TestQueries: 5), seeded);
-        Assert.Equal(seeded, await Get<IDatasetImporter>().ImportBanking77(db.TrainCsv, db.TestCsv));   // re-runnable
+        Assert.Equal(
+            seeded,
+            await Get<IDatasetImporter>().ImportBanking77(db.TrainCsv, db.TestCsv)
+        ); // re-runnable
 
         // embed: names + queries, then nothing left
         var embedded = await Get<EmbedDatasetHandler>().Handle(batchSize: 4);
         Assert.Equal(new EmbedDatasetResult(IntentNames: 4, Queries: 15), embedded);
-        Assert.Equal(new EmbedDatasetResult(0, 0), await Get<EmbedDatasetHandler>().Handle(batchSize: 4));
+        Assert.Equal(
+            new EmbedDatasetResult(0, 0),
+            await Get<EmbedDatasetHandler>().Handle(batchSize: 4)
+        );
 
         // train: every intent gets a centroid
         Assert.Equal(4, await Get<TrainIntentsHandler>().Handle());
@@ -55,7 +62,10 @@ public sealed class PipelineTests(PostgresFixture db) : IClassFixture<PostgresFi
 
         // evaluate: both representations over the test split
         var evaluation = await Get<EvaluateHandler>().Handle();
-        Assert.Equal([IntentRepresentation.Centroid, IntentRepresentation.Name], evaluation.Select(e => e.Representation));
+        Assert.Equal(
+            [IntentRepresentation.Centroid, IntentRepresentation.Name],
+            evaluation.Select(e => e.Representation)
+        );
         Assert.All(evaluation, e => Assert.Equal(5, e.Queries));
         var centroid = evaluation[0];
         Assert.True(centroid.Top1Correct >= 4, $"centroid top-1 was {centroid.Top1Correct}/5");

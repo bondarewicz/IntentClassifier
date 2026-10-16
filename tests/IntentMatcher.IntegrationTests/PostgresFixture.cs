@@ -16,25 +16,33 @@ public sealed class PostgresFixture : IAsyncLifetime
 
     public ServiceProvider Services { get; private set; } = null!;
 
-    public string DataDirectory { get; } = Path.Combine(Path.GetTempPath(), $"intentmatcher-{Guid.NewGuid():N}");
+    public string DataDirectory { get; } =
+        Path.Combine(Path.GetTempPath(), $"intentmatcher-{Guid.NewGuid():N}");
 
     public async Task InitializeAsync()
     {
         await container.StartAsync();
 
         var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?> { ["ConnectionStrings:Postgres"] = container.GetConnectionString() })
+            .AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:Postgres"] = container.GetConnectionString(),
+                }
+            )
             .Build();
 
         Services = new ServiceCollection()
             .AddLogging()
             .AddApplication()
             .AddInfrastructure(configuration)
-            .AddSingleton<IEmbeddingGenerator, HashingEmbeddingGenerator>()   // replaces OpenAI
+            .AddSingleton<IEmbeddingGenerator, HashingEmbeddingGenerator>() // replaces OpenAI
             .BuildServiceProvider();
 
         Directory.CreateDirectory(DataDirectory);
-        await File.WriteAllTextAsync(TrainCsv, """
+        await File.WriteAllTextAsync(
+            TrainCsv,
+            """
             text,category
             I am still waiting on my card?,card_arrival
             When will my new card arrive?,card_arrival
@@ -47,15 +55,19 @@ public sealed class PostgresFixture : IAsyncLifetime
             My card payment was reverted,reverted_card_payment?
             Why did the card payment get reverted?,reverted_card_payment?
             My card has not arrived yet,card_arrival
-            """);
-        await File.WriteAllTextAsync(TestCsv, """
+            """
+        );
+        await File.WriteAllTextAsync(
+            TestCsv,
+            """
             text,category
             Has my card arrived yet?,card_arrival
             I see the same payment charged twice,transaction_charged_twice
             The refund is still not showing,Refund_not_showing_up
             "Hmm, my card payment got reverted",reverted_card_payment?
             My card has not arrived yet,card_arrival
-            """);
+            """
+        );
 
         Services.GetRequiredService<IDatabaseMigrator>().MigrateUp();
     }

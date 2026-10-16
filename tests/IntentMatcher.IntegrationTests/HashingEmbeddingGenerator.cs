@@ -9,18 +9,22 @@ internal sealed class HashingEmbeddingGenerator : IEmbeddingGenerator
 {
     public const int Dimensions = 1536;
 
-    public Task<Embedding> Generate(string text, CancellationToken ct = default) => Task.FromResult(Embed(text));
+    public Task<Embedding> Generate(string text, CancellationToken ct = default) =>
+        Task.FromResult(Embed(text));
 
-    public Task<IReadOnlyList<Embedding>> GenerateBatch(IReadOnlyList<string> texts, CancellationToken ct = default) =>
-        Task.FromResult<IReadOnlyList<Embedding>>(texts.Select(Embed).ToList());
+    public Task<IReadOnlyList<Embedding>> GenerateBatch(
+        IReadOnlyList<string> texts,
+        CancellationToken ct = default
+    ) => Task.FromResult<IReadOnlyList<Embedding>>(texts.Select(Embed).ToList());
 
     private static Embedding Embed(string text)
     {
         var vector = new float[Dimensions];
-        var words = text.ToLowerInvariant().Split([' ', '?', '.', ',', '!', '\''], StringSplitOptions.RemoveEmptyEntries);
+        var words = text.ToLowerInvariant()
+            .Split([' ', '?', '.', ',', '!', '\''], StringSplitOptions.RemoveEmptyEntries);
         foreach (var word in words)
             vector[(int)((uint)StableHash(word) % Dimensions)] += 1f;
-        vector[Dimensions - 1] += 0.01f;   // never all zeros
+        vector[Dimensions - 1] += 0.01f; // never all zeros
         return new Embedding(vector);
     }
 

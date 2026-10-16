@@ -4,5 +4,5 @@ namespace IntentMatcher.Domain.Queries;
 public enum DatasetSplit
 {
     Train,
-    Test
+    Test,
 }

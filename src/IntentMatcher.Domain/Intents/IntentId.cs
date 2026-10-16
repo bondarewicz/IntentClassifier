@@ -13,10 +13,15 @@ public sealed partial record IntentId
 
     public static IntentId Create(string? value)
     {
-        var canonical = value is null ? null : NotAllowed().Replace(value.Trim().ToLowerInvariant(), string.Empty);
+        var canonical = value is null
+            ? null
+            : NotAllowed().Replace(value.Trim().ToLowerInvariant(), string.Empty);
         return canonical is not null && Pattern().IsMatch(canonical)
             ? new IntentId(canonical)
-            : throw new ArgumentException($"'{value}' is not a valid intent id (letters, digits, '_').", nameof(value));
+            : throw new ArgumentException(
+                $"'{value}' is not a valid intent id (letters, digits, '_').",
+                nameof(value)
+            );
     }
 
     // "card_arrival" -> "Card arrival": the readable name that gets embedded.

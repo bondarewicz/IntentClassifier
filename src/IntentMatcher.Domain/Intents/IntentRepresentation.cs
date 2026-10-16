@@ -7,5 +7,5 @@ public enum IntentRepresentation
     Centroid,
 
     // Embedding of the intent's readable name only.
-    Name
+    Name,
 }

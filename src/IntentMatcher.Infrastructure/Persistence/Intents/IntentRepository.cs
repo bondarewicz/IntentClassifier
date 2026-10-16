@@ -8,16 +8,23 @@ using Npgsql;
 
 internal sealed class IntentRepository(NpgsqlDataSource dataSource) : IIntentRepository
 {
-    public async Task<IReadOnlyList<Intent>> ListWithoutNameEmbedding(CancellationToken ct = default)
+    public async Task<IReadOnlyList<Intent>> ListWithoutNameEmbedding(
+        CancellationToken ct = default
+    )
     {
         var sql = IntentsSchema.Sql.SelectWithoutNameEmbedding;
 
         await using var conn = await dataSource.OpenConnectionAsync(ct);
-        var rows = await conn.QueryAsync<IntentRow>(new CommandDefinition(sql, cancellationToken: ct));
+        var rows = await conn.QueryAsync<IntentRow>(
+            new CommandDefinition(sql, cancellationToken: ct)
+        );
         return rows.Select(r => r.MapToIntent()).ToList();
     }
 
-    public async Task SaveNameEmbeddings(IReadOnlyCollection<Intent> intents, CancellationToken ct = default)
+    public async Task SaveNameEmbeddings(
+        IReadOnlyCollection<Intent> intents,
+        CancellationToken ct = default
+    )
     {
         var sql = IntentsSchema.Sql.UpdateNameEmbeddings;
         var embedded = intents.Where(i => i.HasNameEmbedding).ToList();
@@ -31,7 +38,7 @@ internal sealed class IntentRepository(NpgsqlDataSource dataSource) : IIntentRep
                 new
                 {
                     IntentIds = embedded.Select(i => i.Id.Value).ToArray(),
-                    Embeddings = embedded.Select(i => i.NameEmbedding!.ToVectorLiteral()).ToArray()
+                    Embeddings = embedded.Select(i => i.NameEmbedding!.ToVectorLiteral()).ToArray(),
                 },
                 cancellationToken: ct
             )
@@ -57,7 +64,11 @@ internal sealed class IntentRepository(NpgsqlDataSource dataSource) : IIntentRep
 
         await using var conn = await dataSource.OpenConnectionAsync(ct);
         var rows = await conn.QueryAsync<IntentMatchRow>(
-            new CommandDefinition(sql, new { Embedding = embedding.ToVector(), Top = top }, cancellationToken: ct)
+            new CommandDefinition(
+                sql,
+                new { Embedding = embedding.ToVector(), Top = top },
+                cancellationToken: ct
+            )
         );
         return rows.Select(r => r.MapToIntentMatch()).ToList();
     }

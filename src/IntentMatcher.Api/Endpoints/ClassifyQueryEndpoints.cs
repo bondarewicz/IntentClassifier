@@ -13,16 +13,16 @@ public static class ClassifyQueryEndpoints
     {
         app.MapPost("/queries/classify", Classify)
             .WithName("ClassifyQuery")
-            .WithSummary("Top 3 Banking77 intents for a raw customer query, by cosine similarity to the intent centroids.");
+            .WithSummary(
+                "Top 3 Banking77 intents for a raw customer query, by cosine similarity to the intent centroids."
+            );
 
         return app;
     }
 
-    private static async Task<Results<Ok<ClassifyQueryResponse>, ValidationProblem, ProblemHttpResult>> Classify(
-        ClassifyQueryRequest request,
-        ClassifyQueryHandler handler,
-        CancellationToken ct
-    )
+    private static async Task<
+        Results<Ok<ClassifyQueryResponse>, ValidationProblem, ProblemHttpResult>
+    > Classify(ClassifyQueryRequest request, ClassifyQueryHandler handler, CancellationToken ct)
     {
         try
         {
@@ -31,7 +31,9 @@ public static class ClassifyQueryEndpoints
         }
         catch (InvalidQueryException e)
         {
-            return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["query"] = [e.Message] });
+            return TypedResults.ValidationProblem(
+                new Dictionary<string, string[]> { ["query"] = [e.Message] }
+            );
         }
         catch (EmbeddingUnavailableException)
         {

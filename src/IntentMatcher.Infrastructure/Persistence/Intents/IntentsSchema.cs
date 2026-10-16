@@ -12,16 +12,22 @@ public static class IntentsSchema
         public static readonly string IntentId = nameof(IntentRow.IntentId).ToSnakeCase();
         public static readonly string IntentName = nameof(IntentRow.IntentName).ToSnakeCase();
         public static readonly string NameEmbedding = nameof(IntentRow.NameEmbedding).ToSnakeCase();
-        public static readonly string CentroidEmbedding = nameof(IntentRow.CentroidEmbedding).ToSnakeCase();
+        public static readonly string CentroidEmbedding = nameof(IntentRow.CentroidEmbedding)
+            .ToSnakeCase();
         public static readonly string ExampleCount = nameof(IntentRow.ExampleCount).ToSnakeCase();
-        public static readonly string CentroidUpdatedAt = nameof(IntentRow.CentroidUpdatedAt).ToSnakeCase();
+        public static readonly string CentroidUpdatedAt = nameof(IntentRow.CentroidUpdatedAt)
+            .ToSnakeCase();
 
         public static string EmbeddingFor(IntentRepresentation representation) =>
             representation switch
             {
                 IntentRepresentation.Centroid => CentroidEmbedding,
                 IntentRepresentation.Name => NameEmbedding,
-                _ => throw new ArgumentOutOfRangeException(nameof(representation), representation, null)
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(representation),
+                    representation,
+                    null
+                ),
             };
     }
 
@@ -74,18 +80,24 @@ public static class IntentsSchema
             WHERE i.{Columns.IntentId} = c.intent_id
             """;
 
-        public static readonly string SelectClosestByCentroid = SelectClosest(Columns.CentroidEmbedding);
+        public static readonly string SelectClosestByCentroid = SelectClosest(
+            Columns.CentroidEmbedding
+        );
         public static readonly string SelectClosestByName = SelectClosest(Columns.NameEmbedding);
 
         public static string SelectClosestFor(IntentRepresentation representation) =>
-            representation == IntentRepresentation.Centroid ? SelectClosestByCentroid : SelectClosestByName;
+            representation == IntentRepresentation.Centroid
+                ? SelectClosestByCentroid
+                : SelectClosestByName;
 
         // Exact search with pgvector's cosine distance operator; similarity = 1 - distance.
         private static string SelectClosest(string embeddingColumn)
         {
             var distance = $"{embeddingColumn} <=> {Parameters.Embedding}";
             return $"""
-                SELECT row_number() OVER (ORDER BY {distance}) AS {nameof(IntentMatchRow.Rank).ToSnakeCase()},
+                SELECT row_number() OVER (ORDER BY {distance}) AS {nameof(
+                        IntentMatchRow.Rank
+                    ).ToSnakeCase()},
                        {Columns.IntentId},
                        {Columns.IntentName},
                        1 - ({distance}) AS {nameof(IntentMatchRow.Similarity).ToSnakeCase()}

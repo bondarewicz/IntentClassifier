@@ -9,7 +9,7 @@ using IntentMatcher.Domain.Queries;
 public enum EmbeddingSource
 {
     Stored,
-    Generated
+    Generated,
 }
 
 public sealed record ClassifyQueryResult(
@@ -55,6 +55,12 @@ public sealed class ClassifyQueryHandler(
 
         // Ambiguity needs the runner-up even when only the best match is requested.
         var matches = await intents.FindClosest(embedding, Math.Max(top, 2), representation, ct);
-        return new ClassifyQueryResult(rawQuery, text, source, MatchConfidence.IsAmbiguous(matches), matches.Take(top).ToList());
+        return new ClassifyQueryResult(
+            rawQuery,
+            text,
+            source,
+            MatchConfidence.IsAmbiguous(matches),
+            matches.Take(top).ToList()
+        );
     }
 }

@@ -6,5 +6,9 @@ using IntentMatcher.Domain.Intents;
 public interface IIntentMatchRepository
 {
     // Replaces all stored matches with each embedded query's top-K intents; returns rows stored.
-    Task<long> RecomputeAll(int top, IntentRepresentation representation, CancellationToken ct = default);
+    Task<long> RecomputeAll(
+        int top,
+        IntentRepresentation representation,
+        CancellationToken ct = default
+    );
 }

@@ -17,5 +17,6 @@ public class EmbeddingTests
     }
 
     [Fact]
-    public void Rejects_empty_vectors() => Assert.Throws<ArgumentException>(() => new Embedding([]));
+    public void Rejects_empty_vectors() =>
+        Assert.Throws<ArgumentException>(() => new Embedding([]));
 }

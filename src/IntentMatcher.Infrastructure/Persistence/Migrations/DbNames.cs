@@ -4,7 +4,7 @@ namespace IntentMatcher.Infrastructure.Persistence.Migrations;
 // applied migration never changes when a row property is renamed later.
 internal static class DbNames
 {
-    public const string VectorType = "vector(1536)";   // text-embedding-3-small
+    public const string VectorType = "vector(1536)"; // text-embedding-3-small
 
     public static class Intents
     {

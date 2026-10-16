@@ -19,9 +19,13 @@ using Npgsql;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
     {
-        var connectionString = configuration.GetConnectionString("Postgres")
+        var connectionString =
+            configuration.GetConnectionString("Postgres")
             ?? throw new InvalidOperationException("ConnectionStrings:Postgres is not configured.");
 
         PgvectorDapper.EnsureRegistered();
@@ -36,8 +40,12 @@ public static class DependencyInjection
         services.AddSingleton<ILabelledQueryRepository, LabelledQueryRepository>();
         services.AddSingleton<IIntentMatchRepository, IntentMatchRepository>();
         services.AddSingleton<MatchReportQueries>();
-        services.AddSingleton<IMatchReportQueries>(sp => sp.GetRequiredService<MatchReportQueries>());
-        services.AddSingleton<IEvaluationQueries>(sp => sp.GetRequiredService<MatchReportQueries>());
+        services.AddSingleton<IMatchReportQueries>(sp =>
+            sp.GetRequiredService<MatchReportQueries>()
+        );
+        services.AddSingleton<IEvaluationQueries>(sp =>
+            sp.GetRequiredService<MatchReportQueries>()
+        );
         services.AddSingleton<IDatasetImporter, Banking77Importer>();
 
         DatabaseMigrator.AddTo(services, connectionString);

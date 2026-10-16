@@ -12,12 +12,16 @@ public static class Banking77ImportSchema
             CREATE TEMP TABLE {Stage} (query_text text, category text, split text) ON COMMIT DROP
             """;
 
-        public static readonly string CopyIntoStage = $"COPY {Stage} (query_text, category) FROM STDIN (FORMAT csv, HEADER true)";
+        public static readonly string CopyIntoStage =
+            $"COPY {Stage} (query_text, category) FROM STDIN (FORMAT csv, HEADER true)";
 
-        public static readonly string MarkSplit = $"UPDATE {Stage} SET split = @Split WHERE split IS NULL";
+        public static readonly string MarkSplit =
+            $"UPDATE {Stage} SET split = @Split WHERE split IS NULL";
 
         public static readonly string SelectStaged = $"""
-            SELECT query_text AS {nameof(StagedRow.QueryText)}, category AS {nameof(StagedRow.Category)}, split AS {nameof(StagedRow.Split)}
+            SELECT query_text AS {nameof(StagedRow.QueryText)}, category AS {nameof(
+                StagedRow.Category
+            )}, split AS {nameof(StagedRow.Split)}
             FROM {Stage}
             """;
     }

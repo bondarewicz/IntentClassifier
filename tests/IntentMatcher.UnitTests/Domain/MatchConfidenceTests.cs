@@ -17,5 +17,6 @@ public class MatchConfidenceTests
         Assert.False(MatchConfidence.IsAmbiguous([Match(1, 0.80), Match(2, 0.70)]));
 
     [Fact]
-    public void A_single_candidate_is_not_ambiguous() => Assert.False(MatchConfidence.IsAmbiguous([Match(1, 0.5)]));
+    public void A_single_candidate_is_not_ambiguous() =>
+        Assert.False(MatchConfidence.IsAmbiguous([Match(1, 0.5)]));
 }

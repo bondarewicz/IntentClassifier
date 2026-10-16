@@ -16,8 +16,10 @@ internal sealed class DatabaseMigrator(IServiceScopeFactory scopes) : IDatabaseM
     public static void AddTo(IServiceCollection services, string connectionString) =>
         services
             .AddFluentMigratorCore()
-            .ConfigureRunner(rb => rb
-                .AddPostgres()
-                .WithGlobalConnectionString(connectionString)
-                .ScanIn(typeof(M001_EnableVectorExtension).Assembly).For.Migrations());
+            .ConfigureRunner(rb =>
+                rb.AddPostgres()
+                    .WithGlobalConnectionString(connectionString)
+                    .ScanIn(typeof(M001_EnableVectorExtension).Assembly)
+                    .For.Migrations()
+            );
 }

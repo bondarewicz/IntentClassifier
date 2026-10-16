@@ -28,26 +28,36 @@ public sealed class EmbedDatasetHandler(
         var embeddedIntents = 0;
         foreach (var batch in pendingIntents.Chunk(batchSize))
         {
-            var embeddings = await embeddingGenerator.GenerateBatch(batch.Select(i => i.Name).ToList(), ct);
+            var embeddings = await embeddingGenerator.GenerateBatch(
+                batch.Select(i => i.Name).ToList(),
+                ct
+            );
             for (var i = 0; i < batch.Length; i++)
                 batch[i].AssignNameEmbedding(embeddings[i]);
 
             await intents.SaveNameEmbeddings(batch, ct);
             embeddedIntents += batch.Length;
-            progress?.Report(new EmbedDatasetProgress("intents", embeddedIntents, pendingIntents.Count));
+            progress?.Report(
+                new EmbedDatasetProgress("intents", embeddedIntents, pendingIntents.Count)
+            );
         }
 
         var pendingQueries = await queries.ListWithoutEmbedding(ct);
         var embeddedQueries = 0;
         foreach (var batch in pendingQueries.Chunk(batchSize))
         {
-            var embeddings = await embeddingGenerator.GenerateBatch(batch.Select(q => q.Text.Value).ToList(), ct);
+            var embeddings = await embeddingGenerator.GenerateBatch(
+                batch.Select(q => q.Text.Value).ToList(),
+                ct
+            );
             for (var i = 0; i < batch.Length; i++)
                 batch[i].AssignEmbedding(embeddings[i]);
 
             await queries.SaveEmbeddings(batch, ct);
             embeddedQueries += batch.Length;
-            progress?.Report(new EmbedDatasetProgress("queries", embeddedQueries, pendingQueries.Count));
+            progress?.Report(
+                new EmbedDatasetProgress("queries", embeddedQueries, pendingQueries.Count)
+            );
         }
 
         return new EmbedDatasetResult(embeddedIntents, embeddedQueries);

@@ -8,7 +8,10 @@ public sealed class Embedding
     public Embedding(ReadOnlySpan<float> values)
     {
         if (values.IsEmpty)
-            throw new ArgumentException("Embedding must have at least one dimension.", nameof(values));
+            throw new ArgumentException(
+                "Embedding must have at least one dimension.",
+                nameof(values)
+            );
 
         this.values = values.ToArray();
     }

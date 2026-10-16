@@ -8,5 +8,8 @@ public interface IEmbeddingGenerator
     Task<Embedding> Generate(string text, CancellationToken ct = default);
 
     // Embeddings in the same order as the input.
-    Task<IReadOnlyList<Embedding>> GenerateBatch(IReadOnlyList<string> texts, CancellationToken ct = default);
+    Task<IReadOnlyList<Embedding>> GenerateBatch(
+        IReadOnlyList<string> texts,
+        CancellationToken ct = default
+    );
 }

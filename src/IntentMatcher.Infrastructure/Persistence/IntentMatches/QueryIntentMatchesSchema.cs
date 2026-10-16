@@ -13,7 +13,8 @@ public static class QueryIntentMatchesSchema
         public static readonly string QueryId = nameof(QueryIntentMatchRow.QueryId).ToSnakeCase();
         public static readonly string Rank = nameof(QueryIntentMatchRow.Rank).ToSnakeCase();
         public static readonly string IntentId = nameof(QueryIntentMatchRow.IntentId).ToSnakeCase();
-        public static readonly string Similarity = nameof(QueryIntentMatchRow.Similarity).ToSnakeCase();
+        public static readonly string Similarity = nameof(QueryIntentMatchRow.Similarity)
+            .ToSnakeCase();
     }
 
     public static class Parameters
@@ -27,11 +28,17 @@ public static class QueryIntentMatchesSchema
 
         public static readonly string Count = $"SELECT count(*) FROM {Table}";
 
-        public static readonly string InsertTopMatchesByCentroid = InsertTopMatches(IntentRepresentation.Centroid);
-        public static readonly string InsertTopMatchesByName = InsertTopMatches(IntentRepresentation.Name);
+        public static readonly string InsertTopMatchesByCentroid = InsertTopMatches(
+            IntentRepresentation.Centroid
+        );
+        public static readonly string InsertTopMatchesByName = InsertTopMatches(
+            IntentRepresentation.Name
+        );
 
         public static string InsertTopMatchesFor(IntentRepresentation representation) =>
-            representation == IntentRepresentation.Centroid ? InsertTopMatchesByCentroid : InsertTopMatchesByName;
+            representation == IntentRepresentation.Centroid
+                ? InsertTopMatchesByCentroid
+                : InsertTopMatchesByName;
 
         // Set-based: pgvector computes queries x intents cosine distances in one statement.
         private static string InsertTopMatches(IntentRepresentation representation)

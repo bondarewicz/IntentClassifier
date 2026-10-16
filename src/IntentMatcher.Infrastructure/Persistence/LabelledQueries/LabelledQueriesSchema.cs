@@ -11,7 +11,8 @@ public static class LabelledQueriesSchema
         public static readonly string QueryText = nameof(LabelledQueryRow.QueryText).ToSnakeCase();
         public static readonly string IntentId = nameof(LabelledQueryRow.IntentId).ToSnakeCase();
         public static readonly string Embedding = nameof(LabelledQueryRow.Embedding).ToSnakeCase();
-        public static readonly string EmbeddedAt = nameof(LabelledQueryRow.EmbeddedAt).ToSnakeCase();
+        public static readonly string EmbeddedAt = nameof(LabelledQueryRow.EmbeddedAt)
+            .ToSnakeCase();
 
         public static readonly string All = $"{QueryId}, {Split}, {QueryText}, {IntentId}";
     }

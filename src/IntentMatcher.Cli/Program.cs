@@ -64,11 +64,9 @@ for (var i = 1; i < args.Length; i++)
 }
 
 // appsettings.json (next to the binary) < user-secrets (shared with the API) < environment variables.
-var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
-{
-    Args = [],
-    ContentRootPath = AppContext.BaseDirectory
-});
+var builder = Host.CreateApplicationBuilder(
+    new HostApplicationBuilderSettings { Args = [], ContentRootPath = AppContext.BaseDirectory }
+);
 builder.Configuration.AddUserSecrets<Program>(optional: true).AddEnvironmentVariables();
 builder.Logging.SetMinimumLevel(LogLevel.Warning);
 builder.Services.AddApplication().AddInfrastructure(builder.Configuration);
@@ -86,8 +84,11 @@ try
         "train" => await Train(),
         "match" => await Match(top ?? 5),
         "evaluate" => await Evaluate(),
-        "classify" when positional.Count > 0 => await Classify(string.Join(' ', positional), top ?? 3),
-        _ => Usage()
+        "classify" when positional.Count > 0 => await Classify(
+            string.Join(' ', positional),
+            top ?? 3
+        ),
+        _ => Usage(),
     };
 }
 catch (Exception e) when (e is InvalidQueryException or EmbeddingUnavailableException)
@@ -111,18 +112,28 @@ int Migrate()
 
 async Task<int> Seed()
 {
-    var result = await services.GetRequiredService<IDatasetImporter>().ImportBanking77(trainPath, testPath);
-    Console.WriteLine($"Intents: {result.Intents}, train queries: {result.TrainQueries:N0}, test queries: {result.TestQueries:N0}");
+    var result = await services
+        .GetRequiredService<IDatasetImporter>()
+        .ImportBanking77(trainPath, testPath);
+    Console.WriteLine(
+        $"Intents: {result.Intents}, train queries: {result.TrainQueries:N0}, test queries: {result.TestQueries:N0}"
+    );
     return 0;
 }
 
 async Task<int> Embed()
 {
-    var result = await services.GetRequiredService<EmbedDatasetHandler>().Handle(
-        batchSize,
-        new ConsoleProgress<EmbedDatasetProgress>(p => Console.WriteLine($"  {p.Stage}: {p.Embedded}/{p.Total}"))
+    var result = await services
+        .GetRequiredService<EmbedDatasetHandler>()
+        .Handle(
+            batchSize,
+            new ConsoleProgress<EmbedDatasetProgress>(p =>
+                Console.WriteLine($"  {p.Stage}: {p.Embedded}/{p.Total}")
+            )
+        );
+    Console.WriteLine(
+        $"Embedded {result.IntentNames} intent names and {result.Queries:N0} queries."
     );
-    Console.WriteLine($"Embedded {result.IntentNames} intent names and {result.Queries:N0} queries.");
     return 0;
 }
 
@@ -136,12 +147,16 @@ async Task<int> Train()
 async Task<int> Match(int k)
 {
     var started = DateTime.UtcNow;
-    var result = await services.GetRequiredService<RecomputeMatchesHandler>().Handle(k, representation);
+    var result = await services
+        .GetRequiredService<RecomputeMatchesHandler>()
+        .Handle(k, representation);
 
-    Console.WriteLine($"Stored {result.RowsStored:N0} rows (top {k} per query, by {representation}) in {(DateTime.UtcNow - started).TotalSeconds:F1}s.");
+    Console.WriteLine(
+        $"Stored {result.RowsStored:N0} rows (top {k} per query, by {representation}) in {(DateTime.UtcNow - started).TotalSeconds:F1}s."
+    );
     foreach (var s in result.Summary)
         Console.WriteLine(
-            $"  {s.Split,-5} queries {s.Queries,6:N0}  accuracy {(double)s.Correct / s.Queries:P1}  "
+            $"  {s.Split, -5} queries {s.Queries, 6:N0}  accuracy {(double)s.Correct / s.Queries:P1}  "
                 + $"avg best {s.AverageBestSimilarity:F3}  ambiguous {(double)s.Ambiguous / s.Queries:P1}"
         );
     return 0;
@@ -154,7 +169,7 @@ async Task<int> Evaluate()
     Console.WriteLine("Test split (held out):");
     foreach (var r in results)
         Console.WriteLine(
-            $"  by {r.Representation,-8} top-1 {r.Top1Accuracy:P1}  top-3 {r.Top3Accuracy:P1}  "
+            $"  by {r.Representation, -8} top-1 {r.Top1Accuracy:P1}  top-3 {r.Top3Accuracy:P1}  "
                 + $"ambiguous {r.Ambiguous}/{r.Queries} (top-1 {r.AmbiguousTop1Accuracy:P1} vs {r.ConfidentTop1Accuracy:P1} when confident)"
         );
     return 0;
@@ -162,13 +177,17 @@ async Task<int> Evaluate()
 
 async Task<int> Classify(string rawQuery, int k)
 {
-    var result = await services.GetRequiredService<ClassifyQueryHandler>().Handle(rawQuery, k, representation);
+    var result = await services
+        .GetRequiredService<ClassifyQueryHandler>()
+        .Handle(rawQuery, k, representation);
 
     Console.WriteLine($"Query:      {result.RawQuery}");
     Console.WriteLine($"Normalized: {result.Text}");
-    Console.WriteLine($"Embedding:  {result.EmbeddingSource}, by {representation}{(result.IsAmbiguous ? ", AMBIGUOUS" : "")}");
+    Console.WriteLine(
+        $"Embedding:  {result.EmbeddingSource}, by {representation}{(result.IsAmbiguous ? ", AMBIGUOUS" : "")}"
+    );
     foreach (var m in result.Matches)
-        Console.WriteLine($"  {m.Rank,2}. {m.Similarity:F4}  {m.IntentName} ({m.IntentId})");
+        Console.WriteLine($"  {m.Rank, 2}. {m.Similarity:F4}  {m.IntentName} ({m.IntentId})");
     return 0;
 }
 

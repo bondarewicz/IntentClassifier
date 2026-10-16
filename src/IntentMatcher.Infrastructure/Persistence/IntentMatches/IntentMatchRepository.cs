@@ -8,12 +8,22 @@ using Npgsql;
 internal sealed class IntentMatchRepository(NpgsqlDataSource dataSource) : IIntentMatchRepository
 {
     // The new results replace the previous run atomically.
-    public async Task<long> RecomputeAll(int top, IntentRepresentation representation, CancellationToken ct = default)
+    public async Task<long> RecomputeAll(
+        int top,
+        IntentRepresentation representation,
+        CancellationToken ct = default
+    )
     {
         await using var conn = await dataSource.OpenConnectionAsync(ct);
         await using var tx = await conn.BeginTransactionAsync(ct);
 
-        await conn.ExecuteAsync(new CommandDefinition(QueryIntentMatchesSchema.Sql.DeleteAll, transaction: tx, cancellationToken: ct));
+        await conn.ExecuteAsync(
+            new CommandDefinition(
+                QueryIntentMatchesSchema.Sql.DeleteAll,
+                transaction: tx,
+                cancellationToken: ct
+            )
+        );
         await conn.ExecuteAsync(
             new CommandDefinition(
                 QueryIntentMatchesSchema.Sql.InsertTopMatchesFor(representation),
@@ -24,7 +34,11 @@ internal sealed class IntentMatchRepository(NpgsqlDataSource dataSource) : IInte
             )
         );
         var stored = await conn.ExecuteScalarAsync<long>(
-            new CommandDefinition(QueryIntentMatchesSchema.Sql.Count, transaction: tx, cancellationToken: ct)
+            new CommandDefinition(
+                QueryIntentMatchesSchema.Sql.Count,
+                transaction: tx,
+                cancellationToken: ct
+            )
         );
 
         await tx.CommitAsync(ct);

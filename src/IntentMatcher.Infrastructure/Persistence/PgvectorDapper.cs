@@ -40,7 +40,7 @@ internal static class PgvectorDapper
         {
             DatasetSplit.Train => "train",
             DatasetSplit.Test => "test",
-            _ => throw new ArgumentOutOfRangeException(nameof(split), split, null)
+            _ => throw new ArgumentOutOfRangeException(nameof(split), split, null),
         };
 
     public static DatasetSplit ToDatasetSplit(this string split) =>
@@ -48,6 +48,6 @@ internal static class PgvectorDapper
         {
             "train" => DatasetSplit.Train,
             "test" => DatasetSplit.Test,
-            _ => throw new ArgumentOutOfRangeException(nameof(split), split, null)
+            _ => throw new ArgumentOutOfRangeException(nameof(split), split, null),
         };
 }

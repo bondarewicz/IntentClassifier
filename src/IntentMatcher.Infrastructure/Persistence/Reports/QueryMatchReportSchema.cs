@@ -25,11 +25,21 @@ public static class QueryMatchReportSchema
     public static class Sql
     {
         public static readonly string SelectSummaryBySplit = $"""
-            SELECT {Columns.Split}                                                      AS {nameof(SplitSummaryRow.Split).ToSnakeCase()},
-                   count(*)                                                             AS {nameof(SplitSummaryRow.Queries).ToSnakeCase()},
-                   coalesce(avg({Columns.BestSimilarity}), 0)::double precision         AS {nameof(SplitSummaryRow.AverageBestSimilarity).ToSnakeCase()},
-                   count(*) FILTER (WHERE {Columns.IsCorrect})                          AS {nameof(SplitSummaryRow.Correct).ToSnakeCase()},
-                   count(*) FILTER (WHERE {Columns.Margin} < {Parameters.Margin})       AS {nameof(SplitSummaryRow.Ambiguous).ToSnakeCase()}
+            SELECT {Columns.Split}                                                      AS {nameof(
+                    SplitSummaryRow.Split
+                ).ToSnakeCase()},
+                   count(*)                                                             AS {nameof(
+                    SplitSummaryRow.Queries
+                ).ToSnakeCase()},
+                   coalesce(avg({Columns.BestSimilarity}), 0)::double precision         AS {nameof(
+                    SplitSummaryRow.AverageBestSimilarity
+                ).ToSnakeCase()},
+                   count(*) FILTER (WHERE {Columns.IsCorrect})                          AS {nameof(
+                    SplitSummaryRow.Correct
+                ).ToSnakeCase()},
+                   count(*) FILTER (WHERE {Columns.Margin} < {Parameters.Margin})       AS {nameof(
+                    SplitSummaryRow.Ambiguous
+                ).ToSnakeCase()}
             FROM {View}
             GROUP BY {Columns.Split}
             ORDER BY {Columns.Split} DESC
@@ -73,11 +83,21 @@ public static class QueryMatchReportSchema
                     FROM ranked
                     GROUP BY query_id
                 )
-                SELECT count(*)                                  AS {nameof(EvaluationRow.Queries).ToSnakeCase()},
-                       count(*) FILTER (WHERE top1)              AS {nameof(EvaluationRow.Top1Correct).ToSnakeCase()},
-                       count(*) FILTER (WHERE top3)              AS {nameof(EvaluationRow.Top3Correct).ToSnakeCase()},
-                       count(*) FILTER (WHERE ambiguous)         AS {nameof(EvaluationRow.Ambiguous).ToSnakeCase()},
-                       count(*) FILTER (WHERE ambiguous AND top1) AS {nameof(EvaluationRow.AmbiguousTop1Correct).ToSnakeCase()}
+                SELECT count(*)                                  AS {nameof(
+                        EvaluationRow.Queries
+                    ).ToSnakeCase()},
+                       count(*) FILTER (WHERE top1)              AS {nameof(
+                        EvaluationRow.Top1Correct
+                    ).ToSnakeCase()},
+                       count(*) FILTER (WHERE top3)              AS {nameof(
+                        EvaluationRow.Top3Correct
+                    ).ToSnakeCase()},
+                       count(*) FILTER (WHERE ambiguous)         AS {nameof(
+                        EvaluationRow.Ambiguous
+                    ).ToSnakeCase()},
+                       count(*) FILTER (WHERE ambiguous AND top1) AS {nameof(
+                        EvaluationRow.AmbiguousTop1Correct
+                    ).ToSnakeCase()}
                 FROM per_query
                 """;
         }

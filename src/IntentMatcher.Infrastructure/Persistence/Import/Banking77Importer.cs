@@ -13,18 +13,34 @@ using Npgsql;
 // Re-runnable: existing intents and queries (and their embeddings) are kept.
 internal sealed class Banking77Importer(NpgsqlDataSource dataSource) : IDatasetImporter
 {
-    public async Task<DatasetImportResult> ImportBanking77(string trainCsvPath, string testCsvPath, CancellationToken ct = default)
+    public async Task<DatasetImportResult> ImportBanking77(
+        string trainCsvPath,
+        string testCsvPath,
+        CancellationToken ct = default
+    )
     {
         await using var conn = await dataSource.OpenConnectionAsync(ct);
         await using var tx = await conn.BeginTransactionAsync(ct);
 
-        await conn.ExecuteAsync(new CommandDefinition(Banking77ImportSchema.Sql.CreateStage, transaction: tx, cancellationToken: ct));
+        await conn.ExecuteAsync(
+            new CommandDefinition(
+                Banking77ImportSchema.Sql.CreateStage,
+                transaction: tx,
+                cancellationToken: ct
+            )
+        );
         await CopyIntoStage(conn, tx, trainCsvPath, DatasetSplit.Train, ct);
         await CopyIntoStage(conn, tx, testCsvPath, DatasetSplit.Test, ct);
 
-        var staged = (await conn.QueryAsync<Banking77ImportSchema.StagedRow>(
-            new CommandDefinition(Banking77ImportSchema.Sql.SelectStaged, transaction: tx, cancellationToken: ct)
-        )).ToList();
+        var staged = (
+            await conn.QueryAsync<Banking77ImportSchema.StagedRow>(
+                new CommandDefinition(
+                    Banking77ImportSchema.Sql.SelectStaged,
+                    transaction: tx,
+                    cancellationToken: ct
+                )
+            )
+        ).ToList();
 
         var intents = staged
             .Select(r => IntentId.Create(r.Category))
@@ -34,14 +50,24 @@ internal sealed class Banking77Importer(NpgsqlDataSource dataSource) : IDatasetI
 
         // Duplicate texts within a split collapse to one row (first wins).
         var queries = staged
-            .Select(r => (Split: r.Split, Text: QueryText.Create(r.QueryText).Value, IntentId: IntentId.Create(r.Category).Value))
+            .Select(r =>
+                (
+                    Split: r.Split,
+                    Text: QueryText.Create(r.QueryText).Value,
+                    IntentId: IntentId.Create(r.Category).Value
+                )
+            )
             .DistinctBy(q => (q.Split, q.Text))
             .ToList();
 
         await conn.ExecuteAsync(
             new CommandDefinition(
                 IntentsSchema.Sql.InsertMissing,
-                new { IntentIds = intents.Select(i => i.Value).ToArray(), IntentNames = intents.Select(i => i.ToDisplayName()).ToArray() },
+                new
+                {
+                    IntentIds = intents.Select(i => i.Value).ToArray(),
+                    IntentNames = intents.Select(i => i.ToDisplayName()).ToArray(),
+                },
                 tx,
                 cancellationToken: ct
             )
@@ -54,18 +80,30 @@ internal sealed class Banking77Importer(NpgsqlDataSource dataSource) : IDatasetI
                 {
                     Splits = queries.Select(q => q.Split).ToArray(),
                     QueryTexts = queries.Select(q => q.Text).ToArray(),
-                    IntentIds = queries.Select(q => q.IntentId).ToArray()
+                    IntentIds = queries.Select(q => q.IntentId).ToArray(),
                 },
                 tx,
                 cancellationToken: ct
             )
         );
 
-        var counts = (await conn.QueryAsync<(string Split, long Count)>(
-            new CommandDefinition(LabelledQueriesSchema.Sql.CountBySplit, transaction: tx, cancellationToken: ct)
-        )).ToDictionary(c => c.Split, c => c.Count);
+        var counts = (
+            await conn.QueryAsync<(string Split, long Count)>(
+                new CommandDefinition(
+                    LabelledQueriesSchema.Sql.CountBySplit,
+                    transaction: tx,
+                    cancellationToken: ct
+                )
+            )
+        ).ToDictionary(c => c.Split, c => c.Count);
 
-        await conn.ExecuteAsync(new CommandDefinition($"ANALYZE {IntentsSchema.Table}; ANALYZE {LabelledQueriesSchema.Table};", transaction: tx, cancellationToken: ct));
+        await conn.ExecuteAsync(
+            new CommandDefinition(
+                $"ANALYZE {IntentsSchema.Table}; ANALYZE {LabelledQueriesSchema.Table};",
+                transaction: tx,
+                cancellationToken: ct
+            )
+        );
         await tx.CommitAsync(ct);
 
         return new DatasetImportResult(
@@ -83,7 +121,12 @@ internal sealed class Banking77Importer(NpgsqlDataSource dataSource) : IDatasetI
         CancellationToken ct
     )
     {
-        await using (var writer = await conn.BeginTextImportAsync(Banking77ImportSchema.Sql.CopyIntoStage, ct))
+        await using (
+            var writer = await conn.BeginTextImportAsync(
+                Banking77ImportSchema.Sql.CopyIntoStage,
+                ct
+            )
+        )
         using (var reader = File.OpenText(csvPath))
         {
             var buffer = new char[81920];
@@ -93,7 +136,12 @@ internal sealed class Banking77Importer(NpgsqlDataSource dataSource) : IDatasetI
         }
 
         await conn.ExecuteAsync(
-            new CommandDefinition(Banking77ImportSchema.Sql.MarkSplit, new { Split = split.ToDb() }, tx, cancellationToken: ct)
+            new CommandDefinition(
+                Banking77ImportSchema.Sql.MarkSplit,
+                new { Split = split.ToDb() },
+                tx,
+                cancellationToken: ct
+            )
         );
     }
 }

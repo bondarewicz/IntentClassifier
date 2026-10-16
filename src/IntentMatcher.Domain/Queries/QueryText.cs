@@ -27,5 +27,6 @@ public sealed record QueryText
     private static string Normalize(string? query) =>
         string.IsNullOrWhiteSpace(query)
             ? string.Empty
-            : string.Join(' ', query.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)).ToLowerInvariant();
+            : string.Join(' ', query.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
+                .ToLowerInvariant();
 }

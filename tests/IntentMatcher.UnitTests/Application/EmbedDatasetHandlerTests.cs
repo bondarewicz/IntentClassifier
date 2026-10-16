@@ -15,14 +15,27 @@ public class EmbedDatasetHandlerTests
             new Intent(IntentId.Create("top_up_failed"), "Top up failed", new Embedding([1f]))
         );
         var alreadyEmbedded = new LabelledQuery(
-            Guid.NewGuid(), QueryText.Create("done"), DatasetSplit.Train, IntentId.Create("card_arrival"), new Embedding([1f]));
-        var pending = Enumerable.Range(1, 5)
-            .Select(i => new LabelledQuery(Guid.NewGuid(), QueryText.Create($"query {i}"), DatasetSplit.Train, IntentId.Create("card_arrival")))
+            Guid.NewGuid(),
+            QueryText.Create("done"),
+            DatasetSplit.Train,
+            IntentId.Create("card_arrival"),
+            new Embedding([1f])
+        );
+        var pending = Enumerable
+            .Range(1, 5)
+            .Select(i => new LabelledQuery(
+                Guid.NewGuid(),
+                QueryText.Create($"query {i}"),
+                DatasetSplit.Train,
+                IntentId.Create("card_arrival")
+            ))
             .ToArray();
-        var queries = new InMemoryLabelledQueryRepository([alreadyEmbedded, ..pending]);
+        var queries = new InMemoryLabelledQueryRepository([alreadyEmbedded, .. pending]);
         var generator = new FakeEmbeddingGenerator();
 
-        var result = await new EmbedDatasetHandler(intents, queries, generator).Handle(batchSize: 2);
+        var result = await new EmbedDatasetHandler(intents, queries, generator).Handle(
+            batchSize: 2
+        );
 
         Assert.Equal(1, result.IntentNames);
         Assert.Equal(5, result.Queries);
@@ -30,6 +43,13 @@ public class EmbedDatasetHandlerTests
         Assert.Contains("Card arrival", generator.Requested);
         Assert.DoesNotContain("Top up failed", generator.Requested);
         Assert.DoesNotContain("done", generator.Requested);
-        Assert.All(pending, q => Assert.Equal(FakeEmbeddingGenerator.For(q.Text.Value).Values.ToArray(), q.Embedding!.Values.ToArray()));
+        Assert.All(
+            pending,
+            q =>
+                Assert.Equal(
+                    FakeEmbeddingGenerator.For(q.Text.Value).Values.ToArray(),
+                    q.Embedding!.Values.ToArray()
+                )
+        );
     }
 }

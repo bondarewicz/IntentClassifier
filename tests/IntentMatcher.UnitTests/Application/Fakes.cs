@@ -6,18 +6,24 @@ using IntentMatcher.Domain.Intents;
 using IntentMatcher.Domain.Matching;
 using IntentMatcher.Domain.Queries;
 
-internal sealed class InMemoryLabelledQueryRepository(params LabelledQuery[] queries) : ILabelledQueryRepository
+internal sealed class InMemoryLabelledQueryRepository(params LabelledQuery[] queries)
+    : ILabelledQueryRepository
 {
-    public List<LabelledQuery> Queries { get; } = [..queries];
+    public List<LabelledQuery> Queries { get; } = [.. queries];
     public List<int> SavedBatchSizes { get; } = [];
 
     public Task<LabelledQuery?> FindByText(QueryText text, CancellationToken ct = default) =>
         Task.FromResult(Queries.FirstOrDefault(q => q.Text == text));
 
-    public Task<IReadOnlyList<LabelledQuery>> ListWithoutEmbedding(CancellationToken ct = default) =>
+    public Task<IReadOnlyList<LabelledQuery>> ListWithoutEmbedding(
+        CancellationToken ct = default
+    ) =>
         Task.FromResult<IReadOnlyList<LabelledQuery>>(Queries.Where(q => !q.HasEmbedding).ToList());
 
-    public Task SaveEmbeddings(IReadOnlyCollection<LabelledQuery> queries, CancellationToken ct = default)
+    public Task SaveEmbeddings(
+        IReadOnlyCollection<LabelledQuery> queries,
+        CancellationToken ct = default
+    )
     {
         SavedBatchSizes.Add(queries.Count);
         return Task.CompletedTask;
@@ -26,7 +32,7 @@ internal sealed class InMemoryLabelledQueryRepository(params LabelledQuery[] que
 
 internal sealed class FakeIntentRepository(params Intent[] intents) : IIntentRepository
 {
-    public List<Intent> Intents { get; } = [..intents];
+    public List<Intent> Intents { get; } = [.. intents];
     public Embedding? LastQuery { get; private set; }
     public int LastTop { get; private set; }
     public IntentRepresentation? LastRepresentation { get; private set; }
@@ -37,9 +43,13 @@ internal sealed class FakeIntentRepository(params Intent[] intents) : IIntentRep
     public Task<IReadOnlyList<Intent>> ListWithoutNameEmbedding(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<Intent>>(Intents.Where(i => !i.HasNameEmbedding).ToList());
 
-    public Task SaveNameEmbeddings(IReadOnlyCollection<Intent> intents, CancellationToken ct = default) => Task.CompletedTask;
+    public Task SaveNameEmbeddings(
+        IReadOnlyCollection<Intent> intents,
+        CancellationToken ct = default
+    ) => Task.CompletedTask;
 
-    public Task<int> RecomputeCentroids(CancellationToken ct = default) => Task.FromResult(Intents.Count);
+    public Task<int> RecomputeCentroids(CancellationToken ct = default) =>
+        Task.FromResult(Intents.Count);
 
     public Task<IReadOnlyList<IntentMatch>> FindClosest(
         Embedding embedding,
@@ -53,7 +63,10 @@ internal sealed class FakeIntentRepository(params Intent[] intents) : IIntentRep
         LastRepresentation = representation;
         IReadOnlyList<IntentMatch> matches = Similarities
             .Take(top)
-            .Select((s, i) => new IntentMatch(i + 1, IntentId.Create($"intent_{i + 1}"), $"Intent {i + 1}", s))
+            .Select(
+                (s, i) =>
+                    new IntentMatch(i + 1, IntentId.Create($"intent_{i + 1}"), $"Intent {i + 1}", s)
+            )
             .ToList();
         return Task.FromResult(matches);
     }
@@ -71,7 +84,10 @@ internal sealed class FakeEmbeddingGenerator(bool available = true) : IEmbedding
         return Task.FromResult(For(text));
     }
 
-    public Task<IReadOnlyList<Embedding>> GenerateBatch(IReadOnlyList<string> texts, CancellationToken ct = default)
+    public Task<IReadOnlyList<Embedding>> GenerateBatch(
+        IReadOnlyList<string> texts,
+        CancellationToken ct = default
+    )
     {
         if (!available)
             throw new EmbeddingUnavailableException();

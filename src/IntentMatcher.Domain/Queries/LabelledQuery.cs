@@ -4,7 +4,13 @@ using IntentMatcher.Domain.Embeddings;
 using IntentMatcher.Domain.Intents;
 
 // A customer query from the dataset with its known (human-labelled) intent.
-public sealed class LabelledQuery(Guid id, QueryText text, DatasetSplit split, IntentId intentId, Embedding? embedding = null)
+public sealed class LabelledQuery(
+    Guid id,
+    QueryText text,
+    DatasetSplit split,
+    IntentId intentId,
+    Embedding? embedding = null
+)
 {
     public Guid Id { get; } = id;
 
