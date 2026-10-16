@@ -1,0 +1,13 @@
+@host = http://localhost:5235
+
+### Known test query (embedding reused from the database, no OpenAI call)
+POST {{host}}/queries/classify
+Content-Type: application/json
+
+{ "query": "How do I locate my card?" }
+
+### New query (embedded with OpenAI)
+POST {{host}}/queries/classify
+Content-Type: application/json
+
+{ "query": "I was charged twice for the same coffee this morning" }
