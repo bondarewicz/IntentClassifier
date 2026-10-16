@@ -1,9 +1,8 @@
 namespace IntentMatcher.UnitTests.Domain;
 
-using IntentMatcher.Domain;
 using IntentMatcher.Domain.Queries;
 
-public class QueryTextTests
+public sealed class QueryTextTests
 {
     [Theory]
     [InlineData("How do I locate my card?", "how do i locate my card?")]

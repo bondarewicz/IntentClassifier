@@ -2,8 +2,8 @@ namespace IntentMatcher.Infrastructure.Persistence.Migrations;
 
 using FluentMigrator;
 
-[Migration(1, "pgvector extension")]
-public sealed class M001_EnableVectorExtension : Migration
+[Migration(202610161000, "Enable pgvector extension")]
+public sealed class EnableVectorExtension : Migration
 {
     public override void Up() => Execute.Sql("CREATE EXTENSION IF NOT EXISTS vector;");
 

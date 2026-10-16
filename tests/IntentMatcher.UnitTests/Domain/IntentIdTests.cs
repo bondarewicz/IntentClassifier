@@ -2,7 +2,7 @@ namespace IntentMatcher.UnitTests.Domain;
 
 using IntentMatcher.Domain.Intents;
 
-public class IntentIdTests
+public sealed class IntentIdTests
 {
     [Theory]
     [InlineData("card_arrival", "card_arrival")]

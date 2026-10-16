@@ -5,7 +5,7 @@ using IntentMatcher.Domain.Embeddings;
 using IntentMatcher.Domain.Intents;
 using IntentMatcher.Domain.Queries;
 
-public class EmbedDatasetHandlerTests
+public sealed class EmbedDatasetHandlerTests
 {
     [Fact]
     public async Task Embeds_intent_names_and_only_queries_without_embedding_in_batches()

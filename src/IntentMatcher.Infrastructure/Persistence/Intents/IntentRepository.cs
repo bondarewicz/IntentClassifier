@@ -12,11 +12,12 @@ internal sealed class IntentRepository(NpgsqlDataSource dataSource) : IIntentRep
         CancellationToken ct = default
     )
     {
-        var sql = IntentsSchema.Sql.SelectWithoutNameEmbedding;
-
         await using var conn = await dataSource.OpenConnectionAsync(ct);
         var rows = await conn.QueryAsync<IntentRow>(
-            new CommandDefinition(sql, cancellationToken: ct)
+            new CommandDefinition(
+                IntentsSchema.Sql.SelectWithoutNameEmbedding,
+                cancellationToken: ct
+            )
         );
         return rows.Select(r => r.MapToIntent()).ToList();
     }
@@ -26,7 +27,6 @@ internal sealed class IntentRepository(NpgsqlDataSource dataSource) : IIntentRep
         CancellationToken ct = default
     )
     {
-        var sql = IntentsSchema.Sql.UpdateNameEmbeddings;
         var embedded = intents.Where(i => i.HasNameEmbedding).ToList();
         if (embedded.Count == 0)
             return;
@@ -34,7 +34,7 @@ internal sealed class IntentRepository(NpgsqlDataSource dataSource) : IIntentRep
         await using var conn = await dataSource.OpenConnectionAsync(ct);
         await conn.ExecuteAsync(
             new CommandDefinition(
-                sql,
+                IntentsSchema.Sql.UpdateNameEmbeddings,
                 new
                 {
                     IntentIds = embedded.Select(i => i.Id.Value).ToArray(),
@@ -47,10 +47,10 @@ internal sealed class IntentRepository(NpgsqlDataSource dataSource) : IIntentRep
 
     public async Task<int> RecomputeCentroids(CancellationToken ct = default)
     {
-        var sql = IntentsSchema.Sql.UpdateCentroids;
-
         await using var conn = await dataSource.OpenConnectionAsync(ct);
-        return await conn.ExecuteAsync(new CommandDefinition(sql, cancellationToken: ct));
+        return await conn.ExecuteAsync(
+            new CommandDefinition(IntentsSchema.Sql.UpdateCentroids, cancellationToken: ct)
+        );
     }
 
     public async Task<IReadOnlyList<IntentMatch>> FindClosest(
@@ -60,12 +60,10 @@ internal sealed class IntentRepository(NpgsqlDataSource dataSource) : IIntentRep
         CancellationToken ct = default
     )
     {
-        var sql = IntentsSchema.Sql.SelectClosestFor(representation);
-
         await using var conn = await dataSource.OpenConnectionAsync(ct);
         var rows = await conn.QueryAsync<IntentMatchRow>(
             new CommandDefinition(
-                sql,
+                IntentsSchema.Sql.SelectClosestFor(representation),
                 new { Embedding = embedding.ToVector(), Top = top },
                 cancellationToken: ct
             )
@@ -80,5 +78,5 @@ internal static class IntentRowExtensions
         new(IntentId.Create(row.IntentId), row.IntentName, row.NameEmbedding?.ToEmbedding());
 
     public static IntentMatch MapToIntentMatch(this IntentMatchRow row) =>
-        new((int)row.Rank, IntentId.Create(row.IntentId), row.IntentName, row.Similarity);
+        new(row.Rank, IntentId.Create(row.IntentId), row.IntentName, row.Similarity);
 }

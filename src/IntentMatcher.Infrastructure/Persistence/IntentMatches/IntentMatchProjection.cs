@@ -1,14 +1,14 @@
 namespace IntentMatcher.Infrastructure.Persistence.IntentMatches;
 
 using Dapper;
+using IntentMatcher.Application.Matching;
 using IntentMatcher.Domain.Intents;
-using IntentMatcher.Domain.Matching;
 using Npgsql;
 
-internal sealed class IntentMatchRepository(NpgsqlDataSource dataSource) : IIntentMatchRepository
+internal sealed class IntentMatchProjection(NpgsqlDataSource dataSource) : IIntentMatchProjection
 {
     // The new results replace the previous run atomically.
-    public async Task<long> RecomputeAll(
+    public async Task<long> RebuildAll(
         int top,
         IntentRepresentation representation,
         CancellationToken ct = default

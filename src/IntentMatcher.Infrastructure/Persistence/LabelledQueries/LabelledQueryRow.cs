@@ -3,7 +3,7 @@ namespace IntentMatcher.Infrastructure.Persistence.LabelledQueries;
 using Pgvector;
 
 // Persistence model of the labelled_queries table.
-public sealed record LabelledQueryRow
+internal sealed class LabelledQueryRow
 {
     public Guid QueryId { get; set; }
     public string Split { get; set; } = "";

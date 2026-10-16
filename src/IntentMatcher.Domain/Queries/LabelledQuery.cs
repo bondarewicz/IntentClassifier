@@ -24,6 +24,9 @@ public sealed class LabelledQuery(
 
     public bool HasEmbedding => Embedding is not null;
 
-    public void AssignEmbedding(Embedding embedding) =>
-        Embedding = embedding ?? throw new ArgumentNullException(nameof(embedding));
+    public void AssignEmbedding(Embedding embedding)
+    {
+        ArgumentNullException.ThrowIfNull(embedding);
+        Embedding = embedding;
+    }
 }

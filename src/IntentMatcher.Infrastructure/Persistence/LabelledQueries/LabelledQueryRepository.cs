@@ -10,11 +10,13 @@ internal sealed class LabelledQueryRepository(NpgsqlDataSource dataSource)
 {
     public async Task<LabelledQuery?> FindByText(QueryText text, CancellationToken ct = default)
     {
-        var sql = LabelledQueriesSchema.Sql.SelectByText;
-
         await using var conn = await dataSource.OpenConnectionAsync(ct);
         var row = await conn.QuerySingleOrDefaultAsync<LabelledQueryRow>(
-            new CommandDefinition(sql, new { QueryText = text.Value }, cancellationToken: ct)
+            new CommandDefinition(
+                LabelledQueriesSchema.Sql.SelectByText,
+                new { QueryText = text.Value },
+                cancellationToken: ct
+            )
         );
         return row?.MapToLabelledQuery();
     }
@@ -23,11 +25,12 @@ internal sealed class LabelledQueryRepository(NpgsqlDataSource dataSource)
         CancellationToken ct = default
     )
     {
-        var sql = LabelledQueriesSchema.Sql.SelectWithoutEmbedding;
-
         await using var conn = await dataSource.OpenConnectionAsync(ct);
         var rows = await conn.QueryAsync<LabelledQueryRow>(
-            new CommandDefinition(sql, cancellationToken: ct)
+            new CommandDefinition(
+                LabelledQueriesSchema.Sql.SelectWithoutEmbedding,
+                cancellationToken: ct
+            )
         );
         return rows.Select(r => r.MapToLabelledQuery()).ToList();
     }
@@ -37,7 +40,6 @@ internal sealed class LabelledQueryRepository(NpgsqlDataSource dataSource)
         CancellationToken ct = default
     )
     {
-        var sql = LabelledQueriesSchema.Sql.UpdateEmbeddings;
         var embedded = queries.Where(q => q.HasEmbedding).ToList();
         if (embedded.Count == 0)
             return;
@@ -45,7 +47,7 @@ internal sealed class LabelledQueryRepository(NpgsqlDataSource dataSource)
         await using var conn = await dataSource.OpenConnectionAsync(ct);
         await conn.ExecuteAsync(
             new CommandDefinition(
-                sql,
+                LabelledQueriesSchema.Sql.UpdateEmbeddings,
                 new
                 {
                     QueryIds = embedded.Select(q => q.Id).ToArray(),

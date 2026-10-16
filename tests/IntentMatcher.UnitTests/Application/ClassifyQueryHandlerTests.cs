@@ -2,12 +2,11 @@ namespace IntentMatcher.UnitTests.Application;
 
 using IntentMatcher.Application.Abstractions;
 using IntentMatcher.Application.Queries;
-using IntentMatcher.Domain;
 using IntentMatcher.Domain.Embeddings;
 using IntentMatcher.Domain.Intents;
 using IntentMatcher.Domain.Queries;
 
-public class ClassifyQueryHandlerTests
+public sealed class ClassifyQueryHandlerTests
 {
     private static LabelledQuery Known(string text, Embedding? embedding) =>
         new(

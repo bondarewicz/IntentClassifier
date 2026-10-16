@@ -5,8 +5,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Lets the integration tests reconcile Schema.Columns constants against information_schema. -->
+    <InternalsVisibleTo Include="IntentMatcher.IntegrationTests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Dapper" />
-    <PackageReference Include="FluentMigrator.Runner" />
+    <PackageReference Include="FluentMigrator.Runner.Core" />
     <PackageReference Include="FluentMigrator.Runner.Postgres" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />

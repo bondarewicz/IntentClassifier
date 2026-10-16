@@ -4,9 +4,9 @@ using IntentMatcher.Domain.Intents;
 using IntentMatcher.Infrastructure.Persistence.Intents;
 using IntentMatcher.Infrastructure.Persistence.LabelledQueries;
 
-public static class QueryIntentMatchesSchema
+internal static class QueryIntentMatchesSchema
 {
-    public static string Table => "query_intent_matches";
+    public const string Table = "query_intent_matches";
 
     public static class Columns
     {
@@ -17,14 +17,12 @@ public static class QueryIntentMatchesSchema
             .ToSnakeCase();
     }
 
-    public static class Parameters
-    {
-        public const string Top = "@Top";
-    }
-
     public static class Sql
     {
-        public static readonly string DeleteAll = $"TRUNCATE {Table};";
+        // DELETE, not TRUNCATE: TRUNCATE takes ACCESS EXCLUSIVE and would block the report view
+        // and the API for the whole recompute; DELETE lets concurrent readers see the old rows
+        // under MVCC until this transaction commits.
+        public static readonly string DeleteAll = $"DELETE FROM {Table};";
 
         public static readonly string Count = $"SELECT count(*) FROM {Table}";
 
@@ -36,9 +34,16 @@ public static class QueryIntentMatchesSchema
         );
 
         public static string InsertTopMatchesFor(IntentRepresentation representation) =>
-            representation == IntentRepresentation.Centroid
-                ? InsertTopMatchesByCentroid
-                : InsertTopMatchesByName;
+            representation switch
+            {
+                IntentRepresentation.Centroid => InsertTopMatchesByCentroid,
+                IntentRepresentation.Name => InsertTopMatchesByName,
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(representation),
+                    representation,
+                    null
+                ),
+            };
 
         // Set-based: pgvector computes queries x intents cosine distances in one statement.
         private static string InsertTopMatches(IntentRepresentation representation)
@@ -51,12 +56,12 @@ public static class QueryIntentMatchesSchema
                 FROM {LabelledQueriesSchema.Table} q
                 CROSS JOIN LATERAL (
                     SELECT i.{IntentsSchema.Columns.IntentId} AS {Columns.IntentId},
-                           (1 - ({distance}))::real AS {Columns.Similarity},
+                           1 - ({distance}) AS {Columns.Similarity},
                            row_number() OVER (ORDER BY {distance})::smallint AS {Columns.Rank}
                     FROM {IntentsSchema.Table} i
                     WHERE {intentEmbedding} IS NOT NULL
                     ORDER BY {distance}
-                    LIMIT {Parameters.Top}
+                    LIMIT @Top
                 ) m
                 WHERE q.{LabelledQueriesSchema.Columns.Embedding} IS NOT NULL;
                 """;

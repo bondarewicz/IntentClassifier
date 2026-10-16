@@ -3,9 +3,9 @@ namespace IntentMatcher.Infrastructure.Persistence.Intents;
 using IntentMatcher.Domain.Intents;
 using IntentMatcher.Infrastructure.Persistence.LabelledQueries;
 
-public static class IntentsSchema
+internal static class IntentsSchema
 {
-    public static string Table => "intents";
+    public const string Table = "intents";
 
     public static class Columns
     {
@@ -31,15 +31,6 @@ public static class IntentsSchema
             };
     }
 
-    public static class Parameters
-    {
-        public const string IntentIds = "@IntentIds";
-        public const string IntentNames = "@IntentNames";
-        public const string Embeddings = "@Embeddings";
-        public const string Embedding = "@Embedding";
-        public const string Top = "@Top";
-    }
-
     public static class Sql
     {
         public static readonly string SelectWithoutNameEmbedding = $"""
@@ -52,13 +43,13 @@ public static class IntentsSchema
         public static readonly string UpdateNameEmbeddings = $"""
             UPDATE {Table} i
             SET {Columns.NameEmbedding} = u.embedding::vector
-            FROM unnest({Parameters.IntentIds}, {Parameters.Embeddings}) AS u(intent_id, embedding)
+            FROM unnest(@IntentIds, @Embeddings) AS u(intent_id, embedding)
             WHERE i.{Columns.IntentId} = u.intent_id
             """;
 
         public static readonly string InsertMissing = $"""
             INSERT INTO {Table} ({Columns.IntentId}, {Columns.IntentName})
-            SELECT * FROM unnest({Parameters.IntentIds}, {Parameters.IntentNames})
+            SELECT * FROM unnest(@IntentIds, @IntentNames)
             ON CONFLICT ({Columns.IntentId}) DO NOTHING
             """;
 
@@ -86,16 +77,23 @@ public static class IntentsSchema
         public static readonly string SelectClosestByName = SelectClosest(Columns.NameEmbedding);
 
         public static string SelectClosestFor(IntentRepresentation representation) =>
-            representation == IntentRepresentation.Centroid
-                ? SelectClosestByCentroid
-                : SelectClosestByName;
+            representation switch
+            {
+                IntentRepresentation.Centroid => SelectClosestByCentroid,
+                IntentRepresentation.Name => SelectClosestByName,
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(representation),
+                    representation,
+                    null
+                ),
+            };
 
         // Exact search with pgvector's cosine distance operator; similarity = 1 - distance.
         private static string SelectClosest(string embeddingColumn)
         {
-            var distance = $"{embeddingColumn} <=> {Parameters.Embedding}";
+            var distance = $"{embeddingColumn} <=> @Embedding";
             return $"""
-                SELECT row_number() OVER (ORDER BY {distance}) AS {nameof(
+                SELECT row_number() OVER (ORDER BY {distance})::int AS {nameof(
                         IntentMatchRow.Rank
                     ).ToSnakeCase()},
                        {Columns.IntentId},
@@ -104,7 +102,7 @@ public static class IntentsSchema
                 FROM {Table}
                 WHERE {embeddingColumn} IS NOT NULL
                 ORDER BY {distance}
-                LIMIT {Parameters.Top}
+                LIMIT @Top
                 """;
         }
     }

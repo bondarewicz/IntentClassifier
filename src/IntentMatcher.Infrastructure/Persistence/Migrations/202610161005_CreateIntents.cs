@@ -4,8 +4,8 @@ using FluentMigrator;
 
 // The 77 Banking77 intents. Two vector representations: the embedded readable name and the
 // centroid (mean) of the intent's embedded train queries.
-[Migration(2, "intents")]
-public sealed class M002_CreateIntents : Migration
+[Migration(202610161005, "Create intents table")]
+public sealed class CreateIntents : Migration
 {
     public override void Up() =>
         Create

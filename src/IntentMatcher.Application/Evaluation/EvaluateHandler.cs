@@ -7,6 +7,9 @@ using IntentMatcher.Domain.Queries;
 // Accuracy of each intent representation on the held-out test split.
 public sealed class EvaluateHandler(IEvaluationQueries evaluation)
 {
+    // How many ranked candidates count toward Top3Correct/Top3Accuracy.
+    private const int TopN = 3;
+
     public async Task<IReadOnlyList<EvaluationResult>> Handle(
         DatasetSplit split = DatasetSplit.Test,
         CancellationToken ct = default
@@ -19,6 +22,7 @@ public sealed class EvaluateHandler(IEvaluationQueries evaluation)
                     representation,
                     split,
                     MatchConfidence.AmbiguousMargin,
+                    TopN,
                     ct
                 )
             );

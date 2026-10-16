@@ -7,7 +7,7 @@ public sealed record RecomputeMatchesResult(long RowsStored, IReadOnlyList<Split
 
 // Recomputes and stores every query's top-K closest intents, then summarizes the run per split.
 public sealed class RecomputeMatchesHandler(
-    IIntentMatchRepository matches,
+    IIntentMatchProjection matches,
     IMatchReportQueries report
 )
 {
@@ -19,7 +19,7 @@ public sealed class RecomputeMatchesHandler(
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(top, 2); // the report needs the runner-up
 
-        var rows = await matches.RecomputeAll(top, representation, ct);
+        var rows = await matches.RebuildAll(top, representation, ct);
         var summary = await report.GetSummary(MatchConfidence.AmbiguousMargin, ct);
         return new RecomputeMatchesResult(rows, summary);
     }

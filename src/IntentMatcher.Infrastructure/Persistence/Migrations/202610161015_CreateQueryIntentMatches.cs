@@ -5,10 +5,10 @@ using FluentMigrator;
 
 // Top-K intents per query from the last matching run. Narrow rows keyed by (query_id, rank) so the
 // report reads "best match per query" from the PK prefix and "queries per intent" from the partial index.
-[Migration(4, "query_intent_matches")]
-public sealed class M004_CreateQueryIntentMatches : Migration
+[Migration(202610161015, "Create query_intent_matches table")]
+public sealed class CreateQueryIntentMatches : Migration
 {
-    private const string Table = "query_intent_matches";
+    private const string Table = DbNames.QueryIntentMatches.Table;
 
     public override void Up()
     {

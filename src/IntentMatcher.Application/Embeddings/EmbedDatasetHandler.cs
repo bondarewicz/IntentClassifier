@@ -1,6 +1,7 @@
 namespace IntentMatcher.Application.Embeddings;
 
 using IntentMatcher.Application.Abstractions;
+using IntentMatcher.Domain.Embeddings;
 using IntentMatcher.Domain.Intents;
 using IntentMatcher.Domain.Queries;
 
@@ -25,41 +26,58 @@ public sealed class EmbedDatasetHandler(
         ArgumentOutOfRangeException.ThrowIfLessThan(batchSize, 1);
 
         var pendingIntents = await intents.ListWithoutNameEmbedding(ct);
-        var embeddedIntents = 0;
-        foreach (var batch in pendingIntents.Chunk(batchSize))
-        {
-            var embeddings = await embeddingGenerator.GenerateBatch(
-                batch.Select(i => i.Name).ToList(),
-                ct
-            );
-            for (var i = 0; i < batch.Length; i++)
-                batch[i].AssignNameEmbedding(embeddings[i]);
-
-            await intents.SaveNameEmbeddings(batch, ct);
-            embeddedIntents += batch.Length;
-            progress?.Report(
-                new EmbedDatasetProgress("intents", embeddedIntents, pendingIntents.Count)
-            );
-        }
+        var embeddedIntents = await EmbedPending(
+            pendingIntents,
+            batchSize,
+            "intents",
+            textOf: i => i.Name,
+            assign: (i, e) => i.AssignNameEmbedding(e),
+            save: intents.SaveNameEmbeddings,
+            progress,
+            ct
+        );
 
         var pendingQueries = await queries.ListWithoutEmbedding(ct);
-        var embeddedQueries = 0;
-        foreach (var batch in pendingQueries.Chunk(batchSize))
+        var embeddedQueries = await EmbedPending(
+            pendingQueries,
+            batchSize,
+            "queries",
+            textOf: q => q.Text.Value,
+            assign: (q, e) => q.AssignEmbedding(e),
+            save: queries.SaveEmbeddings,
+            progress,
+            ct
+        );
+
+        return new EmbedDatasetResult(embeddedIntents, embeddedQueries);
+    }
+
+    private async Task<int> EmbedPending<T>(
+        IReadOnlyList<T> pending,
+        int batchSize,
+        string stage,
+        Func<T, string> textOf,
+        Action<T, Embedding> assign,
+        Func<IReadOnlyCollection<T>, CancellationToken, Task> save,
+        IProgress<EmbedDatasetProgress>? progress,
+        CancellationToken ct
+    )
+    {
+        var embedded = 0;
+        foreach (var batch in pending.Chunk(batchSize))
         {
             var embeddings = await embeddingGenerator.GenerateBatch(
-                batch.Select(q => q.Text.Value).ToList(),
+                batch.Select(textOf).ToList(),
                 ct
             );
             for (var i = 0; i < batch.Length; i++)
-                batch[i].AssignEmbedding(embeddings[i]);
+                assign(batch[i], embeddings[i]);
 
-            await queries.SaveEmbeddings(batch, ct);
-            embeddedQueries += batch.Length;
-            progress?.Report(
-                new EmbedDatasetProgress("queries", embeddedQueries, pendingQueries.Count)
-            );
+            await save(batch, ct);
+            embedded += batch.Length;
+            progress?.Report(new EmbedDatasetProgress(stage, embedded, pending.Count));
         }
 
-        return new EmbedDatasetResult(embeddedIntents, embeddedQueries);
+        return embedded;
     }
 }

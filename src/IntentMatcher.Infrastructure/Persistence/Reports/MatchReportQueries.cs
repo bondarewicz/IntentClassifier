@@ -16,11 +16,13 @@ internal sealed class MatchReportQueries(NpgsqlDataSource dataSource)
         CancellationToken ct = default
     )
     {
-        var sql = QueryMatchReportSchema.Sql.SelectSummaryBySplit;
-
         await using var conn = await dataSource.OpenConnectionAsync(ct);
         var rows = await conn.QueryAsync<SplitSummaryRow>(
-            new CommandDefinition(sql, new { Margin = ambiguousMargin }, cancellationToken: ct)
+            new CommandDefinition(
+                QueryMatchReportSchema.Sql.SelectSummaryBySplit,
+                new { Margin = ambiguousMargin },
+                cancellationToken: ct
+            )
         );
         return rows.Select(r => new SplitSummary(
                 r.Split.ToDatasetSplit(),
@@ -36,16 +38,20 @@ internal sealed class MatchReportQueries(NpgsqlDataSource dataSource)
         IntentRepresentation representation,
         DatasetSplit split,
         double ambiguousMargin,
+        int top,
         CancellationToken ct = default
     )
     {
-        var sql = QueryMatchReportSchema.Sql.EvaluateFor(representation);
-
         await using var conn = await dataSource.OpenConnectionAsync(ct);
         var row = await conn.QuerySingleAsync<EvaluationRow>(
             new CommandDefinition(
-                sql,
-                new { Split = split.ToDb(), Margin = ambiguousMargin },
+                QueryMatchReportSchema.Sql.EvaluateFor(representation),
+                new
+                {
+                    Split = split.ToDb(),
+                    Margin = ambiguousMargin,
+                    Top = top,
+                },
                 commandTimeout: 0,
                 cancellationToken: ct
             )

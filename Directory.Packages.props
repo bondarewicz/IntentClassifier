@@ -5,7 +5,9 @@
   <!-- App Packages -->
   <ItemGroup>
     <PackageVersion Include="Dapper" Version="2.1.89" />
-    <PackageVersion Include="FluentMigrator.Runner" Version="8.0.1" />
+    <!-- Not the FluentMigrator.Runner meta-package: it pulls in every DB processor, including
+         IBM DB2's clidriver (tens of MB of native binaries we never use). -->
+    <PackageVersion Include="FluentMigrator.Runner.Core" Version="8.0.1" />
     <PackageVersion Include="FluentMigrator.Runner.Postgres" Version="8.0.1" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.13" />
@@ -27,6 +29,7 @@
   <!-- Test Packages -->
   <ItemGroup>
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.13" />
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.13" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.16.0" />

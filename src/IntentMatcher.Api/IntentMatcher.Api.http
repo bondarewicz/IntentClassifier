@@ -1,13 +1,61 @@
 @host = http://localhost:5235
 
-### Known test query (embedding reused from the database, no OpenAI call)
+### Confident match: a known test query, well ahead of the runner-up (no OpenAI call)
 POST {{host}}/queries/classify
 Content-Type: application/json
 
 { "query": "How do I locate my card?" }
 
-### New query (embedded with OpenAI)
+### Ambiguous match: margin between rank 1 and 2 is under 0.02 (no OpenAI call)
 POST {{host}}/queries/classify
 Content-Type: application/json
 
-{ "query": "I was charged twice for the same coffee this morning" }
+{ "query": "why did my cash get charged a fee that should not be there." }
+
+### Normalization: different case/whitespace than the stored text still
+### reuses its embedding - QueryText.Create collapses both to the same
+### normalized text (no OpenAI call)
+POST {{host}}/queries/classify
+Content-Type: application/json
+
+{ "query": "  HOW DO I   locate MY card?  " }
+
+### Request shape: "query" is the only field the endpoint reads. There is
+### no top/representation parameter over HTTP - those are CLI-only knobs;
+### the endpoint always asks for the top 3 matches by centroid (no OpenAI call)
+POST {{host}}/queries/classify
+Content-Type: application/json
+
+{ "query": "where is the virtual card?" }
+
+### New query: not in the dataset, embedded on the fly (calls OpenAI)
+POST {{host}}/queries/classify
+Content-Type: application/json
+
+{ "query": "the barista charged me twice for one iced latte" }
+
+### Off-topic: nothing in Banking77 is close, so every match has low
+### similarity (calls OpenAI)
+POST {{host}}/queries/classify
+Content-Type: application/json
+
+{ "query": "what's the weather like in Paris this weekend?" }
+
+### 400: empty query (no OpenAI call)
+POST {{host}}/queries/classify
+Content-Type: application/json
+
+{ "query": "" }
+
+### 400: whitespace-only query normalizes to empty (no OpenAI call)
+POST {{host}}/queries/classify
+Content-Type: application/json
+
+{ "query": "   \t  " }
+
+### 400: over QueryText.MaxLength (1000 chars), rejected before any
+### embedding call - 1001 "a"s below (no OpenAI call)
+POST {{host}}/queries/classify
+Content-Type: application/json
+
+{ "query": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }

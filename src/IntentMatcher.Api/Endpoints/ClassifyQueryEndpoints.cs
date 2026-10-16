@@ -1,8 +1,6 @@
 namespace IntentMatcher.Api.Endpoints;
 
-using IntentMatcher.Application.Abstractions;
 using IntentMatcher.Application.Queries;
-using IntentMatcher.Domain;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 public static class ClassifyQueryEndpoints
@@ -20,27 +18,15 @@ public static class ClassifyQueryEndpoints
         return app;
     }
 
-    private static async Task<
-        Results<Ok<ClassifyQueryResponse>, ValidationProblem, ProblemHttpResult>
-    > Classify(ClassifyQueryRequest request, ClassifyQueryHandler handler, CancellationToken ct)
+    // InvalidQueryException -> 400 and EmbeddingUnavailableException -> 503 are mapped by
+    // ClassifyQueryExceptionHandler, so this is the happy path only.
+    private static async Task<Ok<ClassifyQueryResponse>> Classify(
+        ClassifyQueryRequest request,
+        ClassifyQueryHandler handler,
+        CancellationToken ct
+    )
     {
-        try
-        {
-            var result = await handler.Handle(request.Query ?? string.Empty, TopMatches, ct: ct);
-            return TypedResults.Ok(ClassifyQueryResponse.From(result));
-        }
-        catch (InvalidQueryException e)
-        {
-            return TypedResults.ValidationProblem(
-                new Dictionary<string, string[]> { ["query"] = [e.Message] }
-            );
-        }
-        catch (EmbeddingUnavailableException)
-        {
-            return TypedResults.Problem(
-                "Query is not in the dataset and no OpenAI API key is configured to embed it.",
-                statusCode: StatusCodes.Status503ServiceUnavailable
-            );
-        }
+        var result = await handler.Handle(request.Query ?? string.Empty, TopMatches, ct: ct);
+        return TypedResults.Ok(ClassifyQueryResponse.From(result));
     }
 }

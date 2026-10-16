@@ -4,8 +4,8 @@ using FluentMigrator;
 
 // Banking77 customer queries with their labelled intent. Keyed by (split, query_text): a handful of
 // texts appear in both train and test and each split keeps its own row.
-[Migration(3, "labelled_queries")]
-public sealed class M003_CreateLabelledQueries : Migration
+[Migration(202610161010, "Create labelled_queries table")]
+public sealed class CreateLabelledQueries : Migration
 {
     public override void Up()
     {

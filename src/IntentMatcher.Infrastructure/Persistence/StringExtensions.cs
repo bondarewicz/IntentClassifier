@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 internal static partial class StringExtensions
 {
-    // IntentId -> intent_id (same convention as Pando's ToSnakeCase).
+    // IntentId -> intent_id.
     public static string ToSnakeCase(this string input) =>
         string.IsNullOrEmpty(input)
             ? input

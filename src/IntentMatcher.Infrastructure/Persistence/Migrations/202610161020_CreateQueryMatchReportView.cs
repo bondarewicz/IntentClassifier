@@ -4,8 +4,8 @@ using FluentMigrator;
 
 // One row per query: labelled intent, best and runner-up intent with scores, the margin between them
 // and whether the best match is correct. Read model for reporting.
-[Migration(5, "query_match_report view")]
-public sealed class M005_CreateQueryMatchReportView : Migration
+[Migration(202610161020, "Create query_match_report view")]
+public sealed class CreateQueryMatchReportView : Migration
 {
     public override void Up() =>
         Execute.Sql(

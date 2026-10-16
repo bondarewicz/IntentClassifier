@@ -23,9 +23,12 @@ public sealed record ClassifyQueryResponse(
         new(
             result.RawQuery,
             result.Text.Value,
-            result.EmbeddingSource == Application.Queries.EmbeddingSource.Stored
-                ? "stored"
-                : "openai",
+            result.EmbeddingSource switch
+            {
+                Application.Queries.EmbeddingSource.Stored => "stored",
+                Application.Queries.EmbeddingSource.Generated => "openai",
+                _ => throw new ArgumentOutOfRangeException(nameof(result)),
+            },
             result.IsAmbiguous,
             result
                 .Matches.Select(m => new IntentMatchResponse(

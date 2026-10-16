@@ -3,6 +3,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- See: https://learn.microsoft.com/en-us/nuget/concepts/auditing-packages -->
     <NuGetAuditMode>all</NuGetAuditMode>
   </PropertyGroup>

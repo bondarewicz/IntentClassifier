@@ -2,17 +2,28 @@ namespace IntentMatcher.Domain.Intents;
 
 using IntentMatcher.Domain.Embeddings;
 
-public sealed class Intent(IntentId id, string name, Embedding? nameEmbedding = null)
+public sealed class Intent
 {
-    public IntentId Id { get; } = id;
+    public Intent(IntentId id, string name, Embedding? nameEmbedding = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        Id = id;
+        Name = name;
+        NameEmbedding = nameEmbedding;
+    }
 
-    public string Name { get; } = name;
+    public IntentId Id { get; }
 
-    // Embedding of the readable name (the scan-group approach: label text only).
-    public Embedding? NameEmbedding { get; private set; } = nameEmbedding;
+    public string Name { get; }
+
+    // Embedding of the readable name only.
+    public Embedding? NameEmbedding { get; private set; }
 
     public bool HasNameEmbedding => NameEmbedding is not null;
 
-    public void AssignNameEmbedding(Embedding embedding) =>
-        NameEmbedding = embedding ?? throw new ArgumentNullException(nameof(embedding));
+    public void AssignNameEmbedding(Embedding embedding)
+    {
+        ArgumentNullException.ThrowIfNull(embedding);
+        NameEmbedding = embedding;
+    }
 }

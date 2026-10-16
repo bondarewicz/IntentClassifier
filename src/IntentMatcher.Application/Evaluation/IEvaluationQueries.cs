@@ -30,6 +30,7 @@ public interface IEvaluationQueries
         IntentRepresentation representation,
         DatasetSplit split,
         double ambiguousMargin,
+        int top,
         CancellationToken ct = default
     );
 }

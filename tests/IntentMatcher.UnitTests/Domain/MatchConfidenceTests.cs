@@ -3,7 +3,7 @@ namespace IntentMatcher.UnitTests.Domain;
 using IntentMatcher.Domain.Intents;
 using IntentMatcher.Domain.Matching;
 
-public class MatchConfidenceTests
+public sealed class MatchConfidenceTests
 {
     private static IntentMatch Match(int rank, double similarity) =>
         new(rank, IntentId.Create($"intent_{rank}"), $"Intent {rank}", similarity);

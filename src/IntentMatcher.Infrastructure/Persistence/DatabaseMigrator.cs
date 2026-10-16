@@ -3,6 +3,7 @@ namespace IntentMatcher.Infrastructure.Persistence;
 using FluentMigrator.Runner;
 using IntentMatcher.Application.Abstractions;
 using IntentMatcher.Infrastructure.Persistence.Migrations;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 internal sealed class DatabaseMigrator(IServiceScopeFactory scopes) : IDatabaseMigrator
@@ -13,13 +14,19 @@ internal sealed class DatabaseMigrator(IServiceScopeFactory scopes) : IDatabaseM
         scope.ServiceProvider.GetRequiredService<IMigrationRunner>().MigrateUp();
     }
 
-    public static void AddTo(IServiceCollection services, string connectionString) =>
+    // The connection string is resolved per scope from IConfiguration (not captured at
+    // registration time), so a test host's configuration override still takes effect.
+    public static void AddTo(IServiceCollection services) =>
         services
             .AddFluentMigratorCore()
             .ConfigureRunner(rb =>
                 rb.AddPostgres()
-                    .WithGlobalConnectionString(connectionString)
-                    .ScanIn(typeof(M001_EnableVectorExtension).Assembly)
+                    .WithGlobalConnectionString(sp =>
+                        DependencyInjection.ReadPostgresConnectionString(
+                            sp.GetRequiredService<IConfiguration>()
+                        )
+                    )
+                    .ScanIn(typeof(EnableVectorExtension).Assembly)
                     .For.Migrations()
             );
 }

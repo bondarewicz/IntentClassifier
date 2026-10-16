@@ -4,26 +4,23 @@ using IntentMatcher.Domain.Intents;
 using IntentMatcher.Infrastructure.Persistence.Intents;
 using IntentMatcher.Infrastructure.Persistence.LabelledQueries;
 
-public static class QueryMatchReportSchema
+internal static class QueryMatchReportSchema
 {
-    public static string View => "query_match_report";
+    public const string View = "query_match_report";
 
     public static class Columns
     {
-        public const string Split = "split";
-        public const string BestSimilarity = "best_similarity";
-        public const string Margin = "margin";
-        public const string IsCorrect = "is_correct";
-    }
-
-    public static class Parameters
-    {
-        public const string Margin = "@Margin";
-        public const string Split = "@Split";
+        public static readonly string Split = nameof(QueryMatchReportRow.Split).ToSnakeCase();
+        public static readonly string BestSimilarity = nameof(QueryMatchReportRow.BestSimilarity)
+            .ToSnakeCase();
+        public static readonly string Margin = nameof(QueryMatchReportRow.Margin).ToSnakeCase();
+        public static readonly string IsCorrect = nameof(QueryMatchReportRow.IsCorrect)
+            .ToSnakeCase();
     }
 
     public static class Sql
     {
+        // Train before test, explicitly - not relying on the alphabetical sort of the split strings.
         public static readonly string SelectSummaryBySplit = $"""
             SELECT {Columns.Split}                                                      AS {nameof(
                     SplitSummaryRow.Split
@@ -37,21 +34,30 @@ public static class QueryMatchReportSchema
                    count(*) FILTER (WHERE {Columns.IsCorrect})                          AS {nameof(
                     SplitSummaryRow.Correct
                 ).ToSnakeCase()},
-                   count(*) FILTER (WHERE {Columns.Margin} < {Parameters.Margin})       AS {nameof(
+                   count(*) FILTER (WHERE {Columns.Margin} < @Margin)                   AS {nameof(
                     SplitSummaryRow.Ambiguous
                 ).ToSnakeCase()}
             FROM {View}
             GROUP BY {Columns.Split}
-            ORDER BY {Columns.Split} DESC
+            ORDER BY ({Columns.Split} = 'train') DESC
             """;
 
         public static readonly string EvaluateByCentroid = Evaluate(IntentRepresentation.Centroid);
         public static readonly string EvaluateByName = Evaluate(IntentRepresentation.Name);
 
         public static string EvaluateFor(IntentRepresentation representation) =>
-            representation == IntentRepresentation.Centroid ? EvaluateByCentroid : EvaluateByName;
+            representation switch
+            {
+                IntentRepresentation.Centroid => EvaluateByCentroid,
+                IntentRepresentation.Name => EvaluateByName,
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(representation),
+                    representation,
+                    null
+                ),
+            };
 
-        // Classifies every embedded query of a split against the intents on the fly (top 3) and
+        // Classifies every embedded query of a split against the intents on the fly (top @Top) and
         // compares with the labelled intent; nothing is stored.
         private static string Evaluate(IntentRepresentation representation)
         {
@@ -70,16 +76,16 @@ public static class QueryMatchReportSchema
                         FROM {IntentsSchema.Table} i
                         WHERE {intentEmbedding} IS NOT NULL
                         ORDER BY {distance}
-                        LIMIT 3
+                        LIMIT @Top
                     ) m
-                    WHERE q.{LabelledQueriesSchema.Columns.Split} = {Parameters.Split}
+                    WHERE q.{LabelledQueriesSchema.Columns.Split} = @Split
                       AND q.{LabelledQueriesSchema.Columns.Embedding} IS NOT NULL
                 ),
                 per_query AS (
                     SELECT query_id,
                            bool_or(rank = 1 AND intent_id = expected) AS top1,
                            bool_or(intent_id = expected)              AS top3,
-                           coalesce(max(similarity) FILTER (WHERE rank = 1) - max(similarity) FILTER (WHERE rank = 2) < {Parameters.Margin}, false) AS ambiguous
+                           coalesce(max(similarity) FILTER (WHERE rank = 1) - max(similarity) FILTER (WHERE rank = 2) < @Margin, false) AS ambiguous
                     FROM ranked
                     GROUP BY query_id
                 )

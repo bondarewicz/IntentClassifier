@@ -2,7 +2,7 @@ namespace IntentMatcher.UnitTests.Domain;
 
 using IntentMatcher.Domain.Embeddings;
 
-public class EmbeddingTests
+public sealed class EmbeddingTests
 {
     [Fact]
     public void Copies_values_so_the_source_array_cannot_mutate_it()

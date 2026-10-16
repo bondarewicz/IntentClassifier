@@ -1,8 +1,8 @@
 namespace IntentMatcher.Infrastructure.Persistence.LabelledQueries;
 
-public static class LabelledQueriesSchema
+internal static class LabelledQueriesSchema
 {
-    public static string Table => "labelled_queries";
+    public const string Table = "labelled_queries";
 
     public static class Columns
     {
@@ -17,23 +17,13 @@ public static class LabelledQueriesSchema
         public static readonly string All = $"{QueryId}, {Split}, {QueryText}, {IntentId}";
     }
 
-    public static class Parameters
-    {
-        public static readonly string QueryText = $"@{nameof(LabelledQueryRow.QueryText)}";
-        public const string QueryIds = "@QueryIds";
-        public const string Splits = "@Splits";
-        public const string QueryTexts = "@QueryTexts";
-        public const string IntentIds = "@IntentIds";
-        public const string Embeddings = "@Embeddings";
-    }
-
     public static class Sql
     {
         // Prefer a row that already has an embedding when the text exists in both splits.
         public static readonly string SelectByText = $"""
             SELECT {Columns.All}, {Columns.Embedding}
             FROM {Table}
-            WHERE {Columns.QueryText} = {Parameters.QueryText}
+            WHERE {Columns.QueryText} = @QueryText
             ORDER BY {Columns.Embedding} IS NULL
             LIMIT 1
             """;
@@ -50,13 +40,13 @@ public static class LabelledQueriesSchema
             UPDATE {Table} q
             SET {Columns.Embedding} = u.embedding::vector,
                 {Columns.EmbeddedAt} = now() AT TIME ZONE 'utc'
-            FROM unnest({Parameters.QueryIds}, {Parameters.Embeddings}) AS u(query_id, embedding)
+            FROM unnest(@QueryIds, @Embeddings) AS u(query_id, embedding)
             WHERE q.{Columns.QueryId} = u.query_id
             """;
 
         public static readonly string InsertMissing = $"""
             INSERT INTO {Table} ({Columns.Split}, {Columns.QueryText}, {Columns.IntentId})
-            SELECT * FROM unnest({Parameters.Splits}, {Parameters.QueryTexts}, {Parameters.IntentIds})
+            SELECT * FROM unnest(@Splits, @QueryTexts, @IntentIds)
             ON CONFLICT ({Columns.Split}, {Columns.QueryText}) DO NOTHING
             """;
 

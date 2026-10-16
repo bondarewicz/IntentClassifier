@@ -32,9 +32,19 @@ internal sealed class OpenAiEmbeddingGenerator(IOptions<OpenAiOptions> options)
         foreach (var chunk in texts.Chunk(MaxInputsPerRequest))
         {
             var response = await Client.GenerateEmbeddingsAsync(chunk, cancellationToken: ct);
-            embeddings.AddRange(
-                response.Value.OrderBy(e => e.Index).Select(e => new Embedding(e.ToFloats().Span))
-            );
+            if (response.Value.Count != chunk.Length)
+                throw new InvalidOperationException(
+                    $"OpenAI returned {response.Value.Count} embeddings for a batch of {chunk.Length} texts."
+                );
+
+            var ordered = response.Value.OrderBy(e => e.Index).ToList();
+            for (var i = 0; i < ordered.Count; i++)
+                if (ordered[i].Index != i)
+                    throw new InvalidOperationException(
+                        $"OpenAI returned embeddings with unexpected Index values for a batch of {chunk.Length} texts."
+                    );
+
+            embeddings.AddRange(ordered.Select(e => new Embedding(e.ToFloats().Span)));
         }
 
         return embeddings;

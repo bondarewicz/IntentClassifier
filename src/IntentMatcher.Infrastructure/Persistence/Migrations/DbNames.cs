@@ -4,7 +4,11 @@ namespace IntentMatcher.Infrastructure.Persistence.Migrations;
 // applied migration never changes when a row property is renamed later.
 internal static class DbNames
 {
-    public const string VectorType = "vector(1536)"; // text-embedding-3-small
+    // The embedding model's output size (text-embedding-3-small). Changing it needs a migration
+    // and a full re-embed; see VectorMapping's dimension guard for the runtime side of this.
+    public const int VectorDimensions = 1536;
+
+    public static readonly string VectorType = $"vector({VectorDimensions})";
 
     public static class Intents
     {
@@ -16,5 +20,10 @@ internal static class DbNames
     {
         public const string Table = "labelled_queries";
         public const string Id = "query_id";
+    }
+
+    public static class QueryIntentMatches
+    {
+        public const string Table = "query_intent_matches";
     }
 }

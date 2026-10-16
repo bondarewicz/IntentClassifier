@@ -2,12 +2,14 @@ namespace IntentMatcher.IntegrationTests;
 
 using IntentMatcher.Application.Abstractions;
 using IntentMatcher.Domain.Embeddings;
+using IntentMatcher.Infrastructure.Persistence.Migrations;
 
-// Deterministic stand-in for OpenAI: a bag-of-words hashed into 1536 dimensions, so texts sharing
-// words are close in cosine space. Lets the real SQL/pgvector pipeline run without network calls.
+// Deterministic stand-in for OpenAI: a bag-of-words hashed into the database's vector dimension,
+// so texts sharing words are close in cosine space. Lets the real SQL/pgvector pipeline run
+// without network calls.
 internal sealed class HashingEmbeddingGenerator : IEmbeddingGenerator
 {
-    public const int Dimensions = 1536;
+    public const int Dimensions = DbNames.VectorDimensions;
 
     public Task<Embedding> Generate(string text, CancellationToken ct = default) =>
         Task.FromResult(Embed(text));
