@@ -21,9 +21,12 @@ public sealed record ClassifyQueryResult(
 );
 
 // Classifies one raw customer query: normalize -> reuse the stored embedding when the text is
-// known, otherwise generate one -> closest intents by cosine similarity.
+// known (labelled_queries, then the classified_queries log), otherwise generate one -> closest
+// intents by cosine similarity. Every successful classification is recorded to the log, which
+// also serves repeats of a once-generated query without another embedding call.
 public sealed class ClassifyQueryHandler(
     ILabelledQueryRepository queries,
+    IClassifiedQueryLog log,
     IIntentRepository intents,
     IEmbeddingGenerator embeddingGenerator
 )
@@ -47,6 +50,11 @@ public sealed class ClassifyQueryHandler(
             embedding = stored;
             source = EmbeddingSource.Stored;
         }
+        else if ((await log.FindByText(text, ct))?.Embedding is { } logged)
+        {
+            embedding = logged;
+            source = EmbeddingSource.Stored;
+        }
         else
         {
             embedding = await embeddingGenerator.Generate(text.Value, ct);
@@ -55,11 +63,24 @@ public sealed class ClassifyQueryHandler(
 
         // Ambiguity needs the runner-up even when only the best match is requested.
         var matches = await intents.FindClosest(embedding, Math.Max(top, 2), representation, ct);
+        var best = matches.Count > 0 ? matches[0] : null;
+        var ambiguous = MatchConfidence.IsAmbiguous(matches);
+
+        await log.Record(
+            text,
+            embedding,
+            representation,
+            best?.IntentId,
+            best?.Similarity,
+            ambiguous,
+            ct
+        );
+
         return new ClassifyQueryResult(
             rawQuery,
             text,
             source,
-            MatchConfidence.IsAmbiguous(matches),
+            ambiguous,
             matches.Take(top).ToList()
         );
     }

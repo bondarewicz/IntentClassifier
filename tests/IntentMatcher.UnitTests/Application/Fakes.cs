@@ -1,6 +1,7 @@
 namespace IntentMatcher.UnitTests.Application;
 
 using IntentMatcher.Application.Abstractions;
+using IntentMatcher.Application.Queries;
 using IntentMatcher.Domain.Embeddings;
 using IntentMatcher.Domain.Intents;
 using IntentMatcher.Domain.Matching;
@@ -69,6 +70,62 @@ internal sealed class FakeIntentRepository(params Intent[] intents) : IIntentRep
             )
             .ToList();
         return Task.FromResult(matches);
+    }
+}
+
+internal sealed class InMemoryClassifiedQueryLog : IClassifiedQueryLog
+{
+    public sealed record Recorded(
+        QueryText Text,
+        Embedding Embedding,
+        IntentRepresentation Representation,
+        IntentId? BestIntentId,
+        double? BestSimilarity,
+        bool Ambiguous
+    );
+
+    private readonly Dictionary<string, ClassifiedQuery> rows = [];
+
+    public List<Recorded> RecordedCalls { get; } = [];
+    public int ConfirmCalls { get; private set; }
+
+    public void Seed(QueryText text, Embedding embedding, IntentId? confirmedIntentId = null) =>
+        rows[text.Value] = new ClassifiedQuery(embedding, confirmedIntentId);
+
+    public Task<ClassifiedQuery?> FindByText(QueryText text, CancellationToken ct = default) =>
+        Task.FromResult(rows.GetValueOrDefault(text.Value));
+
+    public Task Record(
+        QueryText text,
+        Embedding embedding,
+        IntentRepresentation representation,
+        IntentId? bestIntentId,
+        double? bestSimilarity,
+        bool ambiguous,
+        CancellationToken ct = default
+    )
+    {
+        RecordedCalls.Add(
+            new Recorded(text, embedding, representation, bestIntentId, bestSimilarity, ambiguous)
+        );
+        var existing = rows.GetValueOrDefault(text.Value);
+        // Mirrors the real SQL: the embedding is set once and never overwritten on a repeat.
+        rows[text.Value] = new ClassifiedQuery(
+            existing?.Embedding ?? embedding,
+            existing?.ConfirmedIntentId
+        );
+        return Task.CompletedTask;
+    }
+
+    public Task Confirm(QueryText text, IntentId intentId, CancellationToken ct = default)
+    {
+        if (!rows.TryGetValue(text.Value, out var existing))
+            throw new InvalidQueryException(
+                $"'{text}' has not been classified yet - run classify first."
+            );
+        rows[text.Value] = new ClassifiedQuery(existing.Embedding, intentId);
+        ConfirmCalls++;
+        return Task.CompletedTask;
     }
 }
 

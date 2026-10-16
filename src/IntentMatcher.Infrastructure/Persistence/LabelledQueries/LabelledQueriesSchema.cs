@@ -28,6 +28,26 @@ internal static class LabelledQueriesSchema
             LIMIT 1
             """;
 
+        // Used by ClassifiedQueryLog.Confirm (not a repository) to guard a label promotion
+        // against train/test leakage and against overwriting original dataset labels.
+        public static readonly string ExistsBySplitAndText = $"""
+            SELECT EXISTS (
+                SELECT 1 FROM {Table} WHERE {Columns.Split} = @Split AND {Columns.QueryText} = @QueryText
+            )
+            """;
+
+        // Owned here (not by ClassifiedQueriesSchema) because it writes this table; executed by
+        // ClassifiedQueryLog.Confirm inside the one transaction a label promotion needs to also
+        // update classified_queries.confirmed_intent_id/confirmed_at atomically.
+        public static readonly string UpsertTrainExample = $"""
+            INSERT INTO {Table} ({Columns.Split}, {Columns.QueryText}, {Columns.IntentId}, {Columns.Embedding}, {Columns.EmbeddedAt})
+            VALUES ('train', @QueryText, @IntentId, @Embedding, now() AT TIME ZONE 'utc')
+            ON CONFLICT ({Columns.Split}, {Columns.QueryText}) DO UPDATE SET
+                {Columns.IntentId} = EXCLUDED.{Columns.IntentId},
+                {Columns.Embedding} = EXCLUDED.{Columns.Embedding},
+                {Columns.EmbeddedAt} = EXCLUDED.{Columns.EmbeddedAt}
+            """;
+
         public static readonly string SelectWithoutEmbedding = $"""
             SELECT {Columns.All}
             FROM {Table}

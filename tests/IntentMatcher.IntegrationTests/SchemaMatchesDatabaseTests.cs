@@ -2,6 +2,7 @@ namespace IntentMatcher.IntegrationTests;
 
 using System.Reflection;
 using Dapper;
+using IntentMatcher.Infrastructure.Persistence.ClassifiedQueries;
 using IntentMatcher.Infrastructure.Persistence.IntentMatches;
 using IntentMatcher.Infrastructure.Persistence.Intents;
 using IntentMatcher.Infrastructure.Persistence.LabelledQueries;
@@ -43,5 +44,6 @@ public sealed class SchemaMatchesDatabaseTests(PostgresFixture db) : IClassFixtu
         yield return [LabelledQueriesSchema.Table, typeof(LabelledQueriesSchema.Columns)];
         yield return [QueryIntentMatchesSchema.Table, typeof(QueryIntentMatchesSchema.Columns)];
         yield return [QueryMatchReportSchema.View, typeof(QueryMatchReportSchema.Columns)];
+        yield return [ClassifiedQueriesSchema.Table, typeof(ClassifiedQueriesSchema.Columns)];
     }
 }

@@ -33,6 +33,10 @@ internal static class IntentsSchema
 
     public static class Sql
     {
+        public static readonly string Exists = $"""
+            SELECT EXISTS (SELECT 1 FROM {Table} WHERE {Columns.IntentId} = @IntentId)
+            """;
+
         public static readonly string SelectWithoutNameEmbedding = $"""
             SELECT {Columns.IntentId}, {Columns.IntentName}
             FROM {Table}

@@ -101,6 +101,17 @@ internal static class Commands
         return 0;
     }
 
+    public static async Task<int> Label(IServiceProvider services, CliOptions options)
+    {
+        var result = await services
+            .GetRequiredService<ConfirmLabelHandler>()
+            .Handle(options.Positional[0], options.Positional[1]);
+
+        Console.WriteLine($"Labelled \"{result.Text}\" as {result.IntentId}.");
+        Console.WriteLine("Run `train` to fold it into the centroids.");
+        return 0;
+    }
+
     // A split only has zero queries on an empty/unseeded database; guarded so that reports an
     // n/a rate instead of NaN.
     private static string Rate(long numerator, long denominator) =>

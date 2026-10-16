@@ -21,6 +21,7 @@ internal sealed record CliOptions(
           IntentMatcher.Cli match [--top 5] [--by centroid|name]
           IntentMatcher.Cli evaluate
           IntentMatcher.Cli classify "<customer query>" [--top 3] [--by centroid|name]
+          IntentMatcher.Cli label "<customer query>" <intent_id>
 
         Exit codes: 0 ok, 1 usage error (no/unknown command, bad flag), 2 runtime or
         configuration error (bad input, database unreachable, missing config).

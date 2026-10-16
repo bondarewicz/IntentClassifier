@@ -12,6 +12,7 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services) =>
         services
             .AddTransient<ClassifyQueryHandler>()
+            .AddTransient<ConfirmLabelHandler>()
             .AddTransient<EmbedDatasetHandler>()
             .AddTransient<TrainIntentsHandler>()
             .AddTransient<RecomputeMatchesHandler>()

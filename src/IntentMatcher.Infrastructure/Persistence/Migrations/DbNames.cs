@@ -26,4 +26,10 @@ internal static class DbNames
     {
         public const string Table = "query_intent_matches";
     }
+
+    public static class ClassifiedQueries
+    {
+        public const string Table = "classified_queries";
+        public const string Id = "classified_query_id";
+    }
 }

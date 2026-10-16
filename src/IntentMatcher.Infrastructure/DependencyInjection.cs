@@ -3,10 +3,12 @@ namespace IntentMatcher.Infrastructure;
 using IntentMatcher.Application.Abstractions;
 using IntentMatcher.Application.Evaluation;
 using IntentMatcher.Application.Matching;
+using IntentMatcher.Application.Queries;
 using IntentMatcher.Domain.Intents;
 using IntentMatcher.Domain.Queries;
 using IntentMatcher.Infrastructure.Embeddings;
 using IntentMatcher.Infrastructure.Persistence;
+using IntentMatcher.Infrastructure.Persistence.ClassifiedQueries;
 using IntentMatcher.Infrastructure.Persistence.Import;
 using IntentMatcher.Infrastructure.Persistence.IntentMatches;
 using IntentMatcher.Infrastructure.Persistence.Intents;
@@ -46,6 +48,7 @@ public static class DependencyInjection
 
         services.AddSingleton<IIntentRepository, IntentRepository>();
         services.AddSingleton<ILabelledQueryRepository, LabelledQueryRepository>();
+        services.AddSingleton<IClassifiedQueryLog, ClassifiedQueryLog>();
         services.AddSingleton<IIntentMatchProjection, IntentMatchProjection>();
         services.AddSingleton<MatchReportQueries>();
         services.AddSingleton<IMatchReportQueries>(sp =>

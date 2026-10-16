@@ -1,5 +1,12 @@
 @host = http://localhost:5235
 
+### Every call below is also upserted into classified_queries (the query
+### log): the embedding is written once, times_classified and the best
+### match refresh on every repeat. A query that was generated here will
+### report "stored" (no OpenAI call) the next time the same text is sent -
+### promoting a logged query into labelled_queries is CLI-only (`label`),
+### never via this endpoint.
+
 ### Confident match: a known test query, well ahead of the runner-up (no OpenAI call)
 POST {{host}}/queries/classify
 Content-Type: application/json
@@ -28,7 +35,9 @@ Content-Type: application/json
 
 { "query": "where is the virtual card?" }
 
-### New query: not in the dataset, embedded on the fly (calls OpenAI)
+### New query: not in the dataset, embedded on the fly (calls OpenAI).
+### Sending this exact request again reports "stored" with no OpenAI
+### call - it is now served from the query log.
 POST {{host}}/queries/classify
 Content-Type: application/json
 

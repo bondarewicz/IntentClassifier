@@ -41,6 +41,7 @@ thin Dapper repository that maps rows to domain objects.
 | 4 | `query_intent_matches` | top-K intents per query from the last `match` run: `(query_id, rank) -> intent_id, similarity` |
 | 5 | `query_match_report` (view) | per query: labelled intent, best + runner-up with scores, `margin`, `is_correct` |
 | 6 | `query_intent_matches.similarity` | widened `float4` → `double precision`, matching the view, `evaluate` and the C# comparisons |
+| 7 | `classified_queries` | log of every `classify` call, keyed by normalized `query_text`: `embedding` (written once), `times_classified`, last best match + `ambiguous`, `confirmed_intent_id`/`confirmed_at` once a human runs `label` |
 
 Similarity = `1 - (a <=> b)` (pgvector cosine distance). Centroids are `avg(embedding)` of an intent's train queries.
 
@@ -132,6 +133,62 @@ Embedding:  Generated, by Centroid
    2. 0.6044  Extra charge on statement (extra_charge_on_statement)
    3. 0.5929  Card payment fee charged (card_payment_fee_charged)
 ```
+
+## Query log and confirming labels
+
+Every `classify` call (API or CLI) is upserted into `classified_queries`,
+keyed by the normalized text: the embedding is written once and reused by
+later calls, `times_classified` counts repeats, and the last best match /
+`ambiguous` are kept current. A query generated on the fly is served from
+this log on its next repeat - `Stored`, no second OpenAI call - exactly like
+a known dataset query. Rejected (400) queries are never logged. `train`,
+`match` and `evaluate` never read the log.
+
+```sh
+$CLI classify "the barista charged me twice for one iced latte"
+$CLI classify "the barista charged me twice for one iced latte"
+```
+```
+Embedding:  Generated, by Centroid
+   ...
+Embedding:  Stored, by Centroid
+   ...
+```
+
+`label "<query>" <intent_id>` promotes a logged query into
+`labelled_queries` (train split) once a human confirms its intent:
+
+```sh
+$CLI label "the barista charged me twice for one iced latte" \
+  transaction_charged_twice
+```
+```
+Labelled "the barista charged me twice for one iced latte" as
+transaction_charged_twice.
+Run `train` to fold it into the centroids.
+```
+
+It never recomputes centroids itself - run `train` afterwards. Rejected
+(exit 2, nothing written) when:
+
+- the query was never classified (not in the log yet)
+- the intent id does not exist
+- the query is in the test split (would leak test data into training):
+
+```sh
+$CLI label "where is the virtual card?" getting_virtual_card
+```
+```
+'where is the virtual card?' is in the test split - labelling it
+would leak test data into training.
+```
+
+- the query is already labelled in the dataset (an original train row,
+  not an earlier promotion)
+
+Relabelling a previously promoted query with a different intent updates
+that same train row (latest human wins); labelling it again with the
+same intent is a no-op.
 
 ## API
 

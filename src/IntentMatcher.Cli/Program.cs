@@ -61,6 +61,7 @@ try
         "match" => await Commands.Match(services, options),
         "evaluate" => await Commands.Evaluate(services),
         "classify" when options.Positional.Count > 0 => await Commands.Classify(services, options),
+        "label" when options.Positional.Count == 2 => await Commands.Label(services, options),
         _ => Usage(),
     };
 
