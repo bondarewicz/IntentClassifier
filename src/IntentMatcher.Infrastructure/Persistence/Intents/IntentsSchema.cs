@@ -7,102 +7,69 @@ internal static class IntentsSchema
 {
     public const string Table = "intents";
 
-    public static class Columns
-    {
-        public static readonly string IntentId = nameof(IntentRow.IntentId).ToSnakeCase();
-        public static readonly string IntentName = nameof(IntentRow.IntentName).ToSnakeCase();
-        public static readonly string NameEmbedding = nameof(IntentRow.NameEmbedding).ToSnakeCase();
-        public static readonly string CentroidEmbedding = nameof(IntentRow.CentroidEmbedding)
-            .ToSnakeCase();
-        public static readonly string ExampleCount = nameof(IntentRow.ExampleCount).ToSnakeCase();
-        public static readonly string CentroidUpdatedAt = nameof(IntentRow.CentroidUpdatedAt)
-            .ToSnakeCase();
-
-        public static string EmbeddingFor(IntentRepresentation representation) =>
-            representation switch
-            {
-                IntentRepresentation.Centroid => CentroidEmbedding,
-                IntentRepresentation.Name => NameEmbedding,
-                _ => throw new ArgumentOutOfRangeException(
-                    nameof(representation),
-                    representation,
-                    null
-                ),
-            };
-    }
+    public static string EmbeddingColumn(IntentRepresentation representation) =>
+        representation switch
+        {
+            IntentRepresentation.Centroid => "centroid_embedding",
+            IntentRepresentation.Name => "name_embedding",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(representation),
+                representation,
+                null
+            ),
+        };
 
     public static class Sql
     {
         public static readonly string Exists = $"""
-            SELECT EXISTS (SELECT 1 FROM {Table} WHERE {Columns.IntentId} = @IntentId)
+            SELECT EXISTS (SELECT 1 FROM {Table} WHERE intent_id = @IntentId)
             """;
 
         public static readonly string SelectWithoutNameEmbedding = $"""
-            SELECT {Columns.IntentId}, {Columns.IntentName}
+            SELECT intent_id, intent_name
             FROM {Table}
-            WHERE {Columns.NameEmbedding} IS NULL
-            ORDER BY {Columns.IntentId}
+            WHERE name_embedding IS NULL
+            ORDER BY intent_id
             """;
 
         public static readonly string UpdateNameEmbeddings = $"""
             UPDATE {Table} i
-            SET {Columns.NameEmbedding} = u.embedding::vector
+            SET name_embedding = u.embedding::vector
             FROM unnest(@IntentIds, @Embeddings) AS u(intent_id, embedding)
-            WHERE i.{Columns.IntentId} = u.intent_id
+            WHERE i.intent_id = u.intent_id
             """;
 
         public static readonly string InsertMissing = $"""
-            INSERT INTO {Table} ({Columns.IntentId}, {Columns.IntentName})
+            INSERT INTO {Table} (intent_id, intent_name)
             SELECT * FROM unnest(@IntentIds, @IntentNames)
-            ON CONFLICT ({Columns.IntentId}) DO NOTHING
+            ON CONFLICT (intent_id) DO NOTHING
             """;
 
         // Centroid = mean of the intent's embedded train queries (pgvector's avg(vector)).
         public static readonly string UpdateCentroids = $"""
             UPDATE {Table} i
-            SET {Columns.CentroidEmbedding} = c.centroid,
-                {Columns.ExampleCount} = c.examples,
-                {Columns.CentroidUpdatedAt} = now() AT TIME ZONE 'utc'
+            SET centroid_embedding = c.centroid,
+                example_count = c.examples,
+                centroid_updated_at = now() AT TIME ZONE 'utc'
             FROM (
-                SELECT {LabelledQueriesSchema.Columns.IntentId} AS intent_id,
-                       avg({LabelledQueriesSchema.Columns.Embedding}) AS centroid,
-                       count(*) AS examples
+                SELECT intent_id, avg(embedding) AS centroid, count(*) AS examples
                 FROM {LabelledQueriesSchema.Table}
-                WHERE {LabelledQueriesSchema.Columns.Split} = 'train'
-                  AND {LabelledQueriesSchema.Columns.Embedding} IS NOT NULL
-                GROUP BY {LabelledQueriesSchema.Columns.IntentId}
+                WHERE split = 'train' AND embedding IS NOT NULL
+                GROUP BY intent_id
             ) c
-            WHERE i.{Columns.IntentId} = c.intent_id
+            WHERE i.intent_id = c.intent_id
             """;
 
-        public static readonly string SelectClosestByCentroid = SelectClosest(
-            Columns.CentroidEmbedding
-        );
-        public static readonly string SelectClosestByName = SelectClosest(Columns.NameEmbedding);
-
-        public static string SelectClosestFor(IntentRepresentation representation) =>
-            representation switch
-            {
-                IntentRepresentation.Centroid => SelectClosestByCentroid,
-                IntentRepresentation.Name => SelectClosestByName,
-                _ => throw new ArgumentOutOfRangeException(
-                    nameof(representation),
-                    representation,
-                    null
-                ),
-            };
-
         // Exact search with pgvector's cosine distance operator; similarity = 1 - distance.
-        private static string SelectClosest(string embeddingColumn)
+        public static string SelectClosest(IntentRepresentation representation)
         {
+            var embeddingColumn = EmbeddingColumn(representation);
             var distance = $"{embeddingColumn} <=> @Embedding";
             return $"""
-                SELECT row_number() OVER (ORDER BY {distance})::int AS {nameof(
-                        IntentMatchRow.Rank
-                    ).ToSnakeCase()},
-                       {Columns.IntentId},
-                       {Columns.IntentName},
-                       1 - ({distance}) AS {nameof(IntentMatchRow.Similarity).ToSnakeCase()}
+                SELECT row_number() OVER (ORDER BY {distance})::int AS rank,
+                       intent_id,
+                       intent_name,
+                       1 - ({distance}) AS similarity
                 FROM {Table}
                 WHERE {embeddingColumn} IS NOT NULL
                 ORDER BY {distance}

@@ -45,7 +45,7 @@ internal sealed class MatchReportQueries(NpgsqlDataSource dataSource)
         await using var conn = await dataSource.OpenConnectionAsync(ct);
         var row = await conn.QuerySingleAsync<EvaluationRow>(
             new CommandDefinition(
-                QueryMatchReportSchema.Sql.EvaluateFor(representation),
+                QueryMatchReportSchema.Sql.Evaluate(representation),
                 new
                 {
                     Split = split.ToDb(),

@@ -8,20 +8,21 @@ using IntentMatcher.Domain.Queries;
 using IntentMatcher.Infrastructure.Persistence.Intents;
 using IntentMatcher.Infrastructure.Persistence.LabelledQueries;
 using Npgsql;
+using Pgvector;
 
 internal sealed class ClassifiedQueryLog(NpgsqlDataSource dataSource) : IClassifiedQueryLog
 {
-    public async Task<ClassifiedQuery?> FindByText(QueryText text, CancellationToken ct = default)
+    public async Task<Embedding?> FindEmbedding(QueryText text, CancellationToken ct = default)
     {
         await using var conn = await dataSource.OpenConnectionAsync(ct);
-        var row = await conn.QuerySingleOrDefaultAsync<ClassifiedQueryRow>(
+        var embedding = await conn.QuerySingleOrDefaultAsync<Vector>(
             new CommandDefinition(
-                ClassifiedQueriesSchema.Sql.SelectByText,
+                ClassifiedQueriesSchema.Sql.SelectEmbeddingByText,
                 new { QueryText = text.Value },
                 cancellationToken: ct
             )
         );
-        return row?.MapToClassifiedQuery();
+        return embedding?.ToEmbedding();
     }
 
     public async Task Record(
@@ -52,11 +53,8 @@ internal sealed class ClassifiedQueryLog(NpgsqlDataSource dataSource) : IClassif
         );
     }
 
-    // All of a label's guard checks and both its writes run under one transaction, locking the
-    // log row for its duration (SelectByTextForUpdate) - a concurrent label call for the same
-    // text serializes behind it instead of racing it. Promotion also writes labelled_queries;
-    // the one deliberate cross-table write in Persistence (see
-    // LabelledQueriesSchema.Sql.UpsertTrainExample for why that SQL still lives on that table).
+    // Guards and both writes share one transaction holding a lock on the log row, so two label
+    // calls for the same text run one after the other instead of racing.
     public async Task Confirm(QueryText text, IntentId intentId, CancellationToken ct = default)
     {
         await using var conn = await dataSource.OpenConnectionAsync(ct);
@@ -64,7 +62,7 @@ internal sealed class ClassifiedQueryLog(NpgsqlDataSource dataSource) : IClassif
 
         var logged = await conn.QuerySingleOrDefaultAsync<ClassifiedQueryRow>(
             new CommandDefinition(
-                ClassifiedQueriesSchema.Sql.SelectByTextForUpdate,
+                ClassifiedQueriesSchema.Sql.SelectForConfirmUpdate,
                 new { QueryText = text.Value },
                 tx,
                 cancellationToken: ct
@@ -99,8 +97,7 @@ internal sealed class ClassifiedQueryLog(NpgsqlDataSource dataSource) : IClassif
                 $"'{text}' is in the test split - labelling it would leak test data into training."
             );
 
-        // A train row with no confirmed_intent_id is original dataset data, not an earlier
-        // promotion - never overwrite it.
+        // Not confirmed before, so an existing train row is original dataset data: never overwrite.
         if (logged.ConfirmedIntentId is null)
         {
             var inTrainSplit = await conn.ExecuteScalarAsync<bool>(
@@ -143,13 +140,4 @@ internal sealed class ClassifiedQueryLog(NpgsqlDataSource dataSource) : IClassif
 
         await tx.CommitAsync(ct);
     }
-}
-
-internal static class ClassifiedQueryRowExtensions
-{
-    public static ClassifiedQuery MapToClassifiedQuery(this ClassifiedQueryRow row) =>
-        new(
-            row.Embedding.ToEmbedding(),
-            row.ConfirmedIntentId is null ? null : IntentId.Create(row.ConfirmedIntentId)
-        );
 }

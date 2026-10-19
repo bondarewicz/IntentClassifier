@@ -28,14 +28,10 @@ public static class DependencyInjection
     {
         DapperConfiguration.EnsureRegistered();
 
-        // Only takes effect for a container that does not already have one (a raw
-        // ServiceCollection, as the integration tests build) - a host builder (Api/Cli,
-        // WebApplicationFactory) already registers its own IConfiguration.
+        // No-op under a host builder, which registers its own; needed for the tests' raw container.
         services.TryAddSingleton(configuration);
 
-        // Resolved from IConfiguration lazily, at first use, not captured here: this must stay
-        // lazy so a host built for testing (e.g. WebApplicationFactory) can still override
-        // ConnectionStrings:Postgres after AddInfrastructure runs.
+        // Lazy, so a test host can still override ConnectionStrings:Postgres after this runs.
         services.AddSingleton(sp =>
         {
             var connectionString = ReadPostgresConnectionString(
@@ -59,8 +55,6 @@ public static class DependencyInjection
         );
         services.AddSingleton<IDatasetImporter, Banking77Importer>();
 
-        // FluentMigrator needs its own registration pass; the AddSingleton below registers the
-        // IDatabaseMigrator facade over the IMigrationRunner it configures.
         DatabaseMigrator.AddTo(services);
         services.AddSingleton<IDatabaseMigrator, DatabaseMigrator>();
 

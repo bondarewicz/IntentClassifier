@@ -14,8 +14,7 @@ internal sealed class DatabaseMigrator(IServiceScopeFactory scopes) : IDatabaseM
         scope.ServiceProvider.GetRequiredService<IMigrationRunner>().MigrateUp();
     }
 
-    // The connection string is resolved per scope from IConfiguration (not captured at
-    // registration time), so a test host's configuration override still takes effect.
+    // Connection string read per scope, so a test host's configuration override still applies.
     public static void AddTo(IServiceCollection services) =>
         services
             .AddFluentMigratorCore()

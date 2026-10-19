@@ -11,6 +11,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Lets the unit tests exercise CliOptions.TryParse directly. -->
+    <InternalsVisibleTo Include="IntentMatcher.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" />
   </ItemGroup>
 

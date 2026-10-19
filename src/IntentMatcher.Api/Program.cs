@@ -7,9 +7,7 @@ using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// appsettings.json < OPENAI_API_KEY fallback < user-secrets (shared with the CLI) < environment
-// variables - OPENAI_API_KEY is the lowest-priority source, so OpenAi:ApiKey/OpenAi__ApiKey always
-// wins when set.
+// appsettings.json < OPENAI_API_KEY < user-secrets (shared with the CLI) < environment variables.
 builder
     .Configuration.AddInMemoryCollection(
         new Dictionary<string, string?>
@@ -27,9 +25,7 @@ builder.Services.AddApplication().AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
-// Forces the lazy NpgsqlDataSource singleton to resolve now, so a misconfigured
-// ConnectionStrings:Postgres fails startup instead of 500ing on the first request. Runs after
-// Build(), so a test host's configuration override (e.g. WebApplicationFactory) still applies.
+// Fail at startup, not on the first request, when ConnectionStrings:Postgres is missing.
 _ = app.Services.GetRequiredService<NpgsqlDataSource>();
 
 app.UseExceptionHandler();

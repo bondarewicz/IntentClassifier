@@ -8,15 +8,6 @@ internal static class QueryIntentMatchesSchema
 {
     public const string Table = "query_intent_matches";
 
-    public static class Columns
-    {
-        public static readonly string QueryId = nameof(QueryIntentMatchRow.QueryId).ToSnakeCase();
-        public static readonly string Rank = nameof(QueryIntentMatchRow.Rank).ToSnakeCase();
-        public static readonly string IntentId = nameof(QueryIntentMatchRow.IntentId).ToSnakeCase();
-        public static readonly string Similarity = nameof(QueryIntentMatchRow.Similarity)
-            .ToSnakeCase();
-    }
-
     public static class Sql
     {
         // DELETE, not TRUNCATE: TRUNCATE takes ACCESS EXCLUSIVE and would block the report view
@@ -26,44 +17,25 @@ internal static class QueryIntentMatchesSchema
 
         public static readonly string Count = $"SELECT count(*) FROM {Table}";
 
-        public static readonly string InsertTopMatchesByCentroid = InsertTopMatches(
-            IntentRepresentation.Centroid
-        );
-        public static readonly string InsertTopMatchesByName = InsertTopMatches(
-            IntentRepresentation.Name
-        );
-
-        public static string InsertTopMatchesFor(IntentRepresentation representation) =>
-            representation switch
-            {
-                IntentRepresentation.Centroid => InsertTopMatchesByCentroid,
-                IntentRepresentation.Name => InsertTopMatchesByName,
-                _ => throw new ArgumentOutOfRangeException(
-                    nameof(representation),
-                    representation,
-                    null
-                ),
-            };
-
         // Set-based: pgvector computes queries x intents cosine distances in one statement.
-        private static string InsertTopMatches(IntentRepresentation representation)
+        public static string InsertTopMatches(IntentRepresentation representation)
         {
-            var intentEmbedding = $"i.{IntentsSchema.Columns.EmbeddingFor(representation)}";
-            var distance = $"{intentEmbedding} <=> q.{LabelledQueriesSchema.Columns.Embedding}";
+            var intentEmbedding = $"i.{IntentsSchema.EmbeddingColumn(representation)}";
+            var distance = $"{intentEmbedding} <=> q.embedding";
             return $"""
-                INSERT INTO {Table} ({Columns.QueryId}, {Columns.Rank}, {Columns.IntentId}, {Columns.Similarity})
-                SELECT q.{LabelledQueriesSchema.Columns.QueryId}, m.{Columns.Rank}, m.{Columns.IntentId}, m.{Columns.Similarity}
+                INSERT INTO {Table} (query_id, rank, intent_id, similarity)
+                SELECT q.query_id, m.rank, m.intent_id, m.similarity
                 FROM {LabelledQueriesSchema.Table} q
                 CROSS JOIN LATERAL (
-                    SELECT i.{IntentsSchema.Columns.IntentId} AS {Columns.IntentId},
-                           1 - ({distance}) AS {Columns.Similarity},
-                           row_number() OVER (ORDER BY {distance})::smallint AS {Columns.Rank}
+                    SELECT i.intent_id,
+                           1 - ({distance}) AS similarity,
+                           row_number() OVER (ORDER BY {distance})::smallint AS rank
                     FROM {IntentsSchema.Table} i
                     WHERE {intentEmbedding} IS NOT NULL
                     ORDER BY {distance}
                     LIMIT @Top
                 ) m
-                WHERE q.{LabelledQueriesSchema.Columns.Embedding} IS NOT NULL;
+                WHERE q.embedding IS NOT NULL;
                 """;
         }
     }

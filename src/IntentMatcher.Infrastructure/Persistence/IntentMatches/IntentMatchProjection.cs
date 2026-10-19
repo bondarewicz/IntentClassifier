@@ -26,7 +26,7 @@ internal sealed class IntentMatchProjection(NpgsqlDataSource dataSource) : IInte
         );
         await conn.ExecuteAsync(
             new CommandDefinition(
-                QueryIntentMatchesSchema.Sql.InsertTopMatchesFor(representation),
+                QueryIntentMatchesSchema.Sql.InsertTopMatches(representation),
                 new { Top = top },
                 tx,
                 commandTimeout: 0,

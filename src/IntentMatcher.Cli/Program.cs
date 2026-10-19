@@ -21,9 +21,7 @@ var builder = Host.CreateApplicationBuilder(
     new HostApplicationBuilderSettings { Args = [], ContentRootPath = AppContext.BaseDirectory }
 );
 
-// appsettings.json < OPENAI_API_KEY fallback < user-secrets (shared with the API) < environment
-// variables - OPENAI_API_KEY is the lowest-priority source, so OpenAi:ApiKey/OpenAi__ApiKey
-// always wins when set.
+// appsettings.json < OPENAI_API_KEY < user-secrets (shared with the API) < environment variables.
 builder
     .Configuration.AddInMemoryCollection(
         new Dictionary<string, string?>
@@ -35,9 +33,7 @@ builder
     .AddEnvironmentVariables();
 builder.Logging.SetMinimumLevel(LogLevel.Warning);
 
-// The generic host already logs a "Hosting failed to start" stack trace for a StartAsync
-// failure (e.g. OptionsValidationException) before rethrowing it to our own catch block below,
-// which reports the same failure as a clean one-line message - this would otherwise double it.
+// The catch block below already reports a failed start as one line; don't also log its trace.
 builder.Logging.AddFilter("Microsoft.Extensions.Hosting.Internal.Host", LogLevel.None);
 builder.Services.AddApplication().AddInfrastructure(builder.Configuration);
 
@@ -45,8 +41,7 @@ using var host = builder.Build();
 
 try
 {
-    // Runs every IHostedService, including the one ValidateOnStart registers - without this,
-    // OpenAiOptions is never validated because nothing else starts the host for a console app.
+    // Runs ValidateOnStart's options check; nothing else starts the host in a console app.
     await host.StartAsync();
 
     using var scope = host.Services.CreateScope();
@@ -79,6 +74,8 @@ catch (Exception e)
                 or ArgumentException
                 or FormatException
                 or IOException
+                or System.ClientModel.ClientResultException
+                or System.Net.Http.HttpRequestException
     )
 {
     Console.Error.WriteLine(e.Message);

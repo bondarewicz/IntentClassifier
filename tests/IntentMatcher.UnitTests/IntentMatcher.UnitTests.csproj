@@ -17,5 +17,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\IntentMatcher.Domain\IntentMatcher.Domain.csproj" />
     <ProjectReference Include="..\..\src\IntentMatcher.Application\IntentMatcher.Application.csproj" />
+    <ProjectReference Include="..\..\src\IntentMatcher.Cli\IntentMatcher.Cli.csproj" />
   </ItemGroup>
 </Project>

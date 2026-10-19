@@ -95,6 +95,11 @@ internal sealed record CliOptions(
                     }
                     break;
                 default:
+                    if (args[i].StartsWith("--", StringComparison.Ordinal))
+                    {
+                        error = $"Unknown option: {args[i]}";
+                        return false;
+                    }
                     positional.Add(args[i]);
                     break;
             }

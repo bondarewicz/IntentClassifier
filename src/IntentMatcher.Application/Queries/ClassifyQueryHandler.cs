@@ -20,10 +20,8 @@ public sealed record ClassifyQueryResult(
     IReadOnlyList<IntentMatch> Matches
 );
 
-// Classifies one raw customer query: normalize -> reuse the stored embedding when the text is
-// known (labelled_queries, then the classified_queries log), otherwise generate one -> closest
-// intents by cosine similarity. Every successful classification is recorded to the log, which
-// also serves repeats of a once-generated query without another embedding call.
+// Reuses a stored embedding when the text is known, else generates one; ranks intents by cosine
+// similarity and records every successful classification to the log.
 public sealed class ClassifyQueryHandler(
     ILabelledQueryRepository queries,
     IClassifiedQueryLog log,
@@ -50,7 +48,7 @@ public sealed class ClassifyQueryHandler(
             embedding = stored;
             source = EmbeddingSource.Stored;
         }
-        else if ((await log.FindByText(text, ct))?.Embedding is { } logged)
+        else if (await log.FindEmbedding(text, ct) is { } logged)
         {
             embedding = logged;
             source = EmbeddingSource.Stored;

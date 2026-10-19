@@ -78,8 +78,8 @@ public sealed class ClassifiedQueryLogTests(PostgresFixture db) : IClassFixture<
         await log.Record(text, first, IntentRepresentation.Centroid, null, null, false);
         await log.Record(text, second, IntentRepresentation.Centroid, null, null, false);
 
-        var stored = await log.FindByText(text);
-        Assert.Equal(first.Values.ToArray(), stored!.Embedding.Values.ToArray());
+        var stored = await log.FindEmbedding(text);
+        Assert.Equal(first.Values.ToArray(), stored!.Values.ToArray());
     }
 
     [Fact]
@@ -89,12 +89,12 @@ public sealed class ClassifiedQueryLogTests(PostgresFixture db) : IClassFixture<
         var log = Get<IClassifiedQueryLog>();
 
         await Get<ClassifyQueryHandler>().Handle(query, 3);
-        var afterFirst = (await log.FindByText(QueryText.Create(query)))!.Embedding;
+        var afterFirst = await log.FindEmbedding(QueryText.Create(query));
 
         await Get<ClassifyQueryHandler>().Handle(query, 3);
-        var afterSecond = (await log.FindByText(QueryText.Create(query)))!.Embedding;
+        var afterSecond = await log.FindEmbedding(QueryText.Create(query));
 
-        Assert.Equal(afterFirst.Values.ToArray(), afterSecond.Values.ToArray());
+        Assert.Equal(afterFirst!.Values.ToArray(), afterSecond!.Values.ToArray());
     }
 
     [Fact]

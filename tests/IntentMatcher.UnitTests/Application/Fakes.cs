@@ -84,16 +84,18 @@ internal sealed class InMemoryClassifiedQueryLog : IClassifiedQueryLog
         bool Ambiguous
     );
 
-    private readonly Dictionary<string, ClassifiedQuery> rows = [];
+    private sealed record LoggedQuery(Embedding Embedding, IntentId? ConfirmedIntentId);
+
+    private readonly Dictionary<string, LoggedQuery> rows = [];
 
     public List<Recorded> RecordedCalls { get; } = [];
     public int ConfirmCalls { get; private set; }
 
     public void Seed(QueryText text, Embedding embedding, IntentId? confirmedIntentId = null) =>
-        rows[text.Value] = new ClassifiedQuery(embedding, confirmedIntentId);
+        rows[text.Value] = new LoggedQuery(embedding, confirmedIntentId);
 
-    public Task<ClassifiedQuery?> FindByText(QueryText text, CancellationToken ct = default) =>
-        Task.FromResult(rows.GetValueOrDefault(text.Value));
+    public Task<Embedding?> FindEmbedding(QueryText text, CancellationToken ct = default) =>
+        Task.FromResult(rows.GetValueOrDefault(text.Value)?.Embedding);
 
     public Task Record(
         QueryText text,
@@ -110,7 +112,7 @@ internal sealed class InMemoryClassifiedQueryLog : IClassifiedQueryLog
         );
         var existing = rows.GetValueOrDefault(text.Value);
         // Mirrors the real SQL: the embedding is set once and never overwritten on a repeat.
-        rows[text.Value] = new ClassifiedQuery(
+        rows[text.Value] = new LoggedQuery(
             existing?.Embedding ?? embedding,
             existing?.ConfirmedIntentId
         );
@@ -123,7 +125,7 @@ internal sealed class InMemoryClassifiedQueryLog : IClassifiedQueryLog
             throw new InvalidQueryException(
                 $"'{text}' has not been classified yet - run classify first."
             );
-        rows[text.Value] = new ClassifiedQuery(existing.Embedding, intentId);
+        rows[text.Value] = new LoggedQuery(existing.Embedding, intentId);
         ConfirmCalls++;
         return Task.CompletedTask;
     }

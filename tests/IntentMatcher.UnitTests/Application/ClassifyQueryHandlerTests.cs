@@ -180,7 +180,7 @@ public sealed class ClassifyQueryHandlerTests
             false
         );
 
-        Assert.Same(first, (await log.FindByText(QueryText.Create("hello")))!.Embedding);
+        Assert.Same(first, await log.FindEmbedding(QueryText.Create("hello")));
     }
 
     [Fact]

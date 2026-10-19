@@ -10,17 +10,14 @@ public sealed class EvaluateHandler(IEvaluationQueries evaluation)
     // How many ranked candidates count toward Top3Correct/Top3Accuracy.
     private const int TopN = 3;
 
-    public async Task<IReadOnlyList<EvaluationResult>> Handle(
-        DatasetSplit split = DatasetSplit.Test,
-        CancellationToken ct = default
-    )
+    public async Task<IReadOnlyList<EvaluationResult>> Handle(CancellationToken ct = default)
     {
         var results = new List<EvaluationResult>();
         foreach (var representation in Enum.GetValues<IntentRepresentation>())
             results.Add(
                 await evaluation.Evaluate(
                     representation,
-                    split,
+                    DatasetSplit.Test,
                     MatchConfidence.AmbiguousMargin,
                     TopN,
                     ct

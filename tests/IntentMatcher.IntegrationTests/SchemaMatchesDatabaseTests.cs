@@ -1,6 +1,7 @@
 namespace IntentMatcher.IntegrationTests;
 
 using System.Reflection;
+using System.Text.RegularExpressions;
 using Dapper;
 using IntentMatcher.Infrastructure.Persistence.ClassifiedQueries;
 using IntentMatcher.Infrastructure.Persistence.IntentMatches;
@@ -10,15 +11,14 @@ using IntentMatcher.Infrastructure.Persistence.Reports;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 
-// Nothing else links a Schema.Columns constant (derived from a Row property name via ToSnakeCase)
-// to the migration that actually creates the column it names; this is that link. A Row property
-// rename with no matching migration change fails here instead of in whichever SQL happens to run
-// first.
+// Nothing else links a Row class's property names to the migration that actually creates the
+// columns they read; this is that link. A Row property rename with no matching migration change
+// fails here instead of in whichever SQL happens to run first.
 public sealed class SchemaMatchesDatabaseTests(PostgresFixture db) : IClassFixture<PostgresFixture>
 {
     [Theory]
     [MemberData(nameof(SchemaTables))]
-    public async Task Schema_columns_exist_in_the_database(string table, Type columnsType)
+    public async Task Row_properties_exist_as_columns(string table, Type rowType)
     {
         var dataSource = db.Services!.GetRequiredService<NpgsqlDataSource>();
         await using var conn = await dataSource.OpenConnectionAsync();
@@ -29,21 +29,22 @@ public sealed class SchemaMatchesDatabaseTests(PostgresFixture db) : IClassFixtu
             )
         ).ToHashSet();
 
-        // Excludes LabelledQueriesSchema.Columns.All: a comma-joined SQL fragment, not a column name.
-        var expected = columnsType
-            .GetFields(BindingFlags.Public | BindingFlags.Static)
-            .Where(f => f.FieldType == typeof(string) && f.Name != "All")
-            .Select(f => (string)f.GetValue(null)!);
+        var expected = rowType
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Select(p => ToSnakeCase(p.Name));
 
         Assert.All(expected, column => Assert.Contains(column, actual));
     }
 
     public static IEnumerable<object[]> SchemaTables()
     {
-        yield return [IntentsSchema.Table, typeof(IntentsSchema.Columns)];
-        yield return [LabelledQueriesSchema.Table, typeof(LabelledQueriesSchema.Columns)];
-        yield return [QueryIntentMatchesSchema.Table, typeof(QueryIntentMatchesSchema.Columns)];
-        yield return [QueryMatchReportSchema.View, typeof(QueryMatchReportSchema.Columns)];
-        yield return [ClassifiedQueriesSchema.Table, typeof(ClassifiedQueriesSchema.Columns)];
+        yield return [IntentsSchema.Table, typeof(IntentRow)];
+        yield return [LabelledQueriesSchema.Table, typeof(LabelledQueryRow)];
+        yield return [QueryIntentMatchesSchema.Table, typeof(QueryIntentMatchRow)];
+        yield return [QueryMatchReportSchema.View, typeof(QueryMatchReportRow)];
+        yield return [ClassifiedQueriesSchema.Table, typeof(ClassifiedQueryRow)];
     }
+
+    private static string ToSnakeCase(string pascalCase) =>
+        Regex.Replace(pascalCase, "([a-z0-9])([A-Z])", "$1_$2").ToLowerInvariant();
 }

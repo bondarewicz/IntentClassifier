@@ -63,7 +63,7 @@ internal sealed class IntentRepository(NpgsqlDataSource dataSource) : IIntentRep
         await using var conn = await dataSource.OpenConnectionAsync(ct);
         var rows = await conn.QueryAsync<IntentMatchRow>(
             new CommandDefinition(
-                IntentsSchema.Sql.SelectClosestFor(representation),
+                IntentsSchema.Sql.SelectClosest(representation),
                 new { Embedding = embedding.ToVector(), Top = top },
                 cancellationToken: ct
             )
