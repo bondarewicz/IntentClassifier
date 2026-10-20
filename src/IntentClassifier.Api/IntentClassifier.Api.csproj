@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="..\IntentClassifier.Application\IntentClassifier.Application.csproj" />
+    <ProjectReference Include="..\IntentClassifier.Infrastructure\IntentClassifier.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- Same secrets store as IntentClassifier.Cli, so OpenAi:ApiKey is set once. -->
+    <UserSecretsId>d0bf988e-2c62-492b-b493-7c9ccd8cdf53</UserSecretsId>
+  </PropertyGroup>
+</Project>

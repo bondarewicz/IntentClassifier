@@ -1,0 +1,13 @@
+<Solution>
+    <Folder Name="/src/">
+        <Project Path="src/IntentClassifier.Api/IntentClassifier.Api.csproj" />
+        <Project Path="src/IntentClassifier.Application/IntentClassifier.Application.csproj" />
+        <Project Path="src/IntentClassifier.Cli/IntentClassifier.Cli.csproj" />
+        <Project Path="src/IntentClassifier.Domain/IntentClassifier.Domain.csproj" />
+        <Project Path="src/IntentClassifier.Infrastructure/IntentClassifier.Infrastructure.csproj" />
+    </Folder>
+    <Folder Name="/tests/">
+        <Project Path="tests/IntentClassifier.IntegrationTests/IntentClassifier.IntegrationTests.csproj" />
+        <Project Path="tests/IntentClassifier.UnitTests/IntentClassifier.UnitTests.csproj" />
+    </Folder>
+</Solution>
